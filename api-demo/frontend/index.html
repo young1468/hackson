@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>一分钟人生岔路口 API Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #18202f;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(92, 200, 164, .46), transparent 28%),
+        radial-gradient(circle at 88% 6%, rgba(255, 206, 91, .48), transparent 32%),
+        linear-gradient(160deg, #f4f0e7 0%, #edf6f5 52%, #f3eaf2 100%);
+    }
+    .app {
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+    .card {
+      width: min(100%, 430px);
+      min-height: min(720px, calc(100svh - 36px));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      padding: 22px;
+      border-radius: 8px;
+      border: 1px solid rgba(24, 32, 47, .12);
+      background: rgba(255, 255, 255, .8);
+      box-shadow: 0 18px 55px rgba(55, 62, 78, .16);
+      backdrop-filter: blur(14px);
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 34px; line-height: 1.08; letter-spacing: 0; }
+    h2 { font-size: 26px; line-height: 1.15; letter-spacing: 0; }
+    .topline { color: #536174; font-size: 13px; }
+    .subtitle { color: #536174; font-size: 17px; line-height: 1.65; }
+    .box, .story {
+      padding: 16px;
+      border: 1px solid rgba(24, 32, 47, .1);
+      border-radius: 8px;
+      background: #fffdf8;
+    }
+    .role-name { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+    .story { min-height: 112px; font-size: 19px; line-height: 1.62; white-space: pre-wrap; }
+    .stats { display: grid; gap: 10px; }
+    .stat-head { display: flex; justify-content: space-between; color: #435064; font-size: 14px; }
+    .bar { height: 10px; border-radius: 999px; background: rgba(24, 32, 47, .09); overflow: hidden; }
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 50%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2bb3a3, #f2bf4d);
+      transition: width .28s ease;
+    }
+    .choices { display: grid; gap: 12px; }
+    button {
+      width: 100%;
+      min-height: 52px;
+      border: 0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 750;
+      color: #172033;
+      background: #ffcf5a;
+      box-shadow: 0 8px 18px rgba(140, 105, 26, .18);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    button.secondary { background: #d9f0ed; box-shadow: none; }
+    button.ghost { background: #eef1f5; box-shadow: none; }
+    button:disabled { opacity: .58; cursor: default; }
+    .result {
+      min-height: 44px;
+      padding: 12px 14px;
+      border-left: 4px solid #2bb3a3;
+      border-radius: 6px;
+      background: rgba(43, 179, 163, .1);
+      color: #263247;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+    .row { display: flex; gap: 10px; }
+    .row button { flex: 1; }
+    .share {
+      user-select: text;
+      padding: 13px;
+      border-radius: 8px;
+      background: #eef1f5;
+      color: #263247;
+      line-height: 1.5;
+    }
+    .toast { min-height: 22px; color: #a45038; font-size: 14px; line-height: 1.45; }
+    .loading { color: #3c746d; font-weight: 750; }
+    @media (max-width: 360px) {
+      .app { padding: 12px; }
+      .card { padding: 18px; gap: 14px; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 23px; }
+      .story { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" class="app" aria-live="polite"></main>
+  <script>
+    (() => {
+      "use strict";
+
+      const API_BASE = window.API_BASE || "http://localhost:3001";
+      const TOTAL_STEPS = 6;
+      const STAT_LABELS = { mood: "心态", money: "钱包", luck: "运气", crazy: "离谱值" };
+      const ROLES = [
+        { id: "student", name: "大学生", desc: "你有三份作业、两门考试和一颗想睡到自然醒的心。", stats: { mood: 62, money: 38, luck: 55, crazy: 35 } },
+        { id: "office", name: "社畜", desc: "你熟练掌握表情包回复、会议点头和把咖啡当护身符。", stats: { mood: 52, money: 58, luck: 45, crazy: 42 } },
+        { id: "startup", name: "创业者", desc: "你拥有一个商业计划、一张空白表格和一种明天就会起飞的错觉。", stats: { mood: 68, money: 42, luck: 48, crazy: 62 } },
+        { id: "cat", name: "猫", desc: "你没有工作，但全家都在为你的情绪价值打工。", stats: { mood: 74, money: 28, luck: 64, crazy: 55 } },
+        { id: "space", name: "外星人", desc: "你刚降落地球，误以为便利店关东煮是能量核心。", stats: { mood: 60, money: 24, luck: 58, crazy: 75 } }
+      ];
+
+      const FALLBACK_EVENTS = {
+        student: [
+          makeEvent("凌晨一点，论文只写了标题。室友问你要不要一起点夜宵。", "点最大份", "你吃出了灵感，也吃出了困意。", { mood: 8, money: -14, luck: -2, crazy: 10 }, "打开文献", "你读完摘要后开始敬畏知识。", { mood: -4, money: 4, luck: 6, crazy: -3 }),
+          makeEvent("老师突然说下节课随堂展示。你的 PPT 还停留在新建页面。", "硬讲极简风", "三页空白被你讲成了哲学。", { mood: 10, money: 0, luck: 10, crazy: 14 }, "求助组员", "组员发来一个层层嵌套的压缩包。", { mood: -8, money: 0, luck: 2, crazy: 8 })
+        ],
+        office: [
+          makeEvent("老板问这个需求简单吧，会议室空气突然变得很懂事。", "回复问题不大", "你被拉进三个会议，问题长出了翅膀。", { mood: -12, money: 0, luck: -4, crazy: 9 }, "说需要评估", "你获得了二十分钟神圣缓冲区。", { mood: 5, money: 0, luck: 6, crazy: -2 }),
+          makeEvent("测试环境突然不动了，同事们看向你。", "先重启服务", "服务暂时好了，但你知道这只是开始。", { mood: -8, money: 0, luck: -3, crazy: 8 }, "说是缓存问题", "大家沉默三秒，然后居然信了。", { mood: 6, money: 0, luck: 10, crazy: 15 })
+        ],
+        startup: [
+          makeEvent("投资人问商业模式，你的脑海里弹出一张没填完的表。", "讲平台生态", "投资人点头，你也不知道他懂了还是困了。", { mood: 8, money: 6, luck: 5, crazy: 10 }, "诚实说验证中", "你收获了一句很真实。", { mood: -2, money: 0, luck: 8, crazy: -4 }),
+          makeEvent("第一位付费用户出现了，但备注写着买错了能退吗。", "真诚退款", "用户感动，转介绍了一个真的会用的人。", { mood: 5, money: -4, luck: 11, crazy: -2 }, "询问原因", "你收获三页反馈和一份命名危机。", { mood: -2, money: 0, luck: 7, crazy: 6 })
+        ],
+        cat: [
+          makeEvent("铲屎官买了新猫窝，但快递箱看起来更有建筑美学。", "入住快递箱", "你宣布这里是新王宫。", { mood: 12, money: 0, luck: 5, crazy: 9 }, "试试猫窝", "你睡了三分钟，给足了面子。", { mood: 5, money: 0, luck: 2, crazy: -2 }),
+          makeEvent("人类正在开视频会议，你发现键盘正好适合躺下。", "占领键盘", "会议里出现一串神秘字符。", { mood: 11, money: 0, luck: 8, crazy: 14 }, "坐在镜头前", "会议效率提升，因为所有人都在夸你。", { mood: 9, money: 0, luck: 7, crazy: 6 })
+        ],
+        space: [
+          makeEvent("你降落在便利店门口，自动门打开，你以为地球在欢迎外交使团。", "向门鞠躬", "店员也点头，跨文明礼仪完成。", { mood: 8, money: 0, luck: 7, crazy: 8 }, "研究自动门", "门开了二十次，你肃然起敬。", { mood: 5, money: 0, luck: 2, crazy: 12 }),
+          makeEvent("你第一次看见奶茶菜单，上面有许多甜度和小料。", "全都加一点", "杯子像一颗可饮用小行星。", { mood: 9, money: -12, luck: 3, crazy: 14 }, "选店员推荐", "你开始理解地球人的温柔陷阱。", { mood: 7, money: -6, luck: 5, crazy: -2 })
+        ]
+      };
+
+      let state = freshState();
+      const app = document.getElementById("app");
+
+      function makeEvent(story, textA, resultA, effectsA, textB, resultB, effectsB) {
+        return {
+          story,
+          scene: "city",
+          choices: [
+            { text: textA, result: resultA, effects: effectsA },
+            { text: textB, result: resultB, effects: effectsB }
+          ]
+        };
+      }
+
+      function freshState() {
+        return {
+          view: "start",
+          role: null,
+          stats: { mood: 50, money: 50, luck: 50, crazy: 50 },
+          step: 0,
+          currentEvent: null,
+          history: [],
+          locked: false,
+          loading: false,
+          resultText: "",
+          ending: null,
+          toast: ""
+        };
+      }
+
+      function pickRandom(items) {
+        return items[Math.floor(Math.random() * items.length)];
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function cleanEvent(event) {
+        if (!event || typeof event !== "object") return null;
+        const choices = Array.isArray(event.choices) ? event.choices.slice(0, 2) : [];
+        if (typeof event.story !== "string" || choices.length !== 2) return null;
+        return {
+          story: event.story,
+          scene: typeof event.scene === "string" ? event.scene : "city",
+          choices: choices.map(choice => ({
+            text: String(choice.text || "顺着命运走"),
+            result: String(choice.result || "命运绕了一下，但还能继续。"),
+            effects: normalizeEffects(choice.effects)
+          }))
+        };
+      }
+
+      function normalizeEffects(effects) {
+        const output = {};
+        Object.keys(STAT_LABELS).forEach(key => {
+          const value = Number(effects && effects[key]);
+          output[key] = Number.isFinite(value) ? clamp(value, -25, 25) : 0;
+        });
+        return output;
+      }
+
+      function applyEffects(effects) {
+        Object.keys(STAT_LABELS).forEach(key => {
+          state.stats[key] = clamp(state.stats[key] + (effects[key] || 0), 0, 100);
+        });
+      }
+
+      function startGame() {
+        const role = pickRandom(ROLES);
+        state = freshState();
+        state.view = "role";
+        state.role = role;
+        state.stats = { ...role.stats };
+        render();
+      }
+
+      async function enterLife() {
+        state.step = 1;
+        state.view = "play";
+        state.loading = true;
+        render();
+        state.currentEvent = await getNextEvent();
+        state.loading = false;
+        state.locked = false;
+        render();
+      }
+
+      async function choose(choice) {
+        if (state.locked || state.loading) return;
+        state.locked = true;
+        applyEffects(choice.effects);
+        state.resultText = choice.result;
+        state.history.push({
+          story: state.currentEvent.story,
+          choice: choice.text,
+          result: choice.result
+        });
+        render();
+
+        window.setTimeout(async () => {
+          if (state.step >= TOTAL_STEPS) {
+            await finishGame();
+            return;
+          }
+          state.step += 1;
+          state.resultText = "";
+          state.loading = true;
+          render();
+          state.currentEvent = await getNextEvent();
+          state.loading = false;
+          state.locked = false;
+          render();
+        }, 650);
+      }
+
+      async function getNextEvent() {
+        try {
+          const data = await postJson("/api/next", {
+            role: state.role.name,
+            step: state.step,
+            stats: state.stats,
+            history: state.history
+          });
+          const event = cleanEvent(data);
+          if (event) return event;
+          throw new Error("bad event");
+        } catch (error) {
+          state.toast = "哎呀，命运卡住了，请再试一次~ 已切换本地剧情。";
+          return pickRandom(FALLBACK_EVENTS[state.role.id]);
+        }
+      }
+
+      async function finishGame() {
+        state.view = "ending";
+        state.loading = true;
+        render();
+        state.ending = await getEnding();
+        state.loading = false;
+        state.locked = false;
+        render();
+      }
+
+      async function getEnding() {
+        try {
+          const data = await postJson("/api/ending", {
+            role: state.role.name,
+            stats: state.stats,
+            history: state.history
+          });
+          if (data && typeof data.title === "string" && typeof data.description === "string") {
+            return {
+              title: data.title,
+              desc: data.description,
+              share: String(data.shareText || `我在《一分钟人生岔路口》里活成了：${data.title}`)
+            };
+          }
+          throw new Error("bad ending");
+        } catch (error) {
+          const title = state.stats.crazy > 75 ? `${state.role.name}版离谱值超标观察对象` : `${state.role.name}版平行人生体验官`;
+          return {
+            title,
+            desc: "大模型暂时离线，但你的人生仍然完成了生成。六次选择之后，命运决定先给你一个稳定又好笑的兜底结局。",
+            share: `我在《一分钟人生岔路口》里活成了：${title}`
+          };
+        }
+      }
+
+      async function postJson(path, body) {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 15000);
+        try {
+          const response = await fetch(`${API_BASE}${path}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
+          if (!response.ok) throw new Error(`status ${response.status}`);
+          return await response.json();
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      }
+
+      function statsHtml(stats) {
+        return `<div class="stats">${Object.keys(STAT_LABELS).map(key => `
+          <div>
+            <div class="stat-head"><span>${STAT_LABELS[key]}</span><strong>${stats[key]}</strong></div>
+            <div class="bar"><span style="width:${stats[key]}%"></span></div>
+          </div>
+        `).join("")}</div>`;
+      }
+
+      function card(content) {
+        app.innerHTML = `<section class="card">${content}<div class="toast">${state.toast || ""}</div></section>`;
+      }
+
+      function render() {
+        if (state.view === "start") {
+          card(`
+            <div class="topline">API 实时生成演示版</div>
+            <h1>《一分钟人生岔路口》</h1>
+            <p class="subtitle">6 次选择，生成你的一分钟平行人生。后端会尝试实时生成剧情，失败时自动使用本地兜底。</p>
+            <button id="startBtn">开始人生</button>
+          `);
+          document.getElementById("startBtn").addEventListener("click", startGame);
+          return;
+        }
+
+        if (state.view === "role") {
+          card(`
+            <div class="topline">命运抽签完成</div>
+            <div class="box">
+              <div class="role-name">${state.role.name}</div>
+              <p class="subtitle">${state.role.desc}</p>
+            </div>
+            ${statsHtml(state.stats)}
+            <button id="enterBtn">进入人生</button>
+            <button class="ghost" id="rerollBtn">换个身份</button>
+          `);
+          document.getElementById("enterBtn").addEventListener("click", enterLife);
+          document.getElementById("rerollBtn").addEventListener("click", startGame);
+          return;
+        }
+
+        if (state.view === "play") {
+          const event = state.currentEvent;
+          card(`
+            <div class="topline">第 ${state.step} / ${TOTAL_STEPS} 步 · 当前身份：${state.role.name}</div>
+            ${statsHtml(state.stats)}
+            <div id="storyText" class="story">${state.loading ? '<span class="loading">命运生成中……</span>' : ""}</div>
+            <div class="choices">
+              ${event && !state.loading ? event.choices.map((choice, index) => `<button class="${index === 1 ? "secondary" : ""}" data-choice="${index}" ${state.locked ? "disabled" : ""}>${choice.text}</button>`).join("") : ""}
+            </div>
+            <div class="result">${state.resultText || "选择后，命运会立刻开始改稿。"}</div>
+          `);
+          if (event && !state.loading) {
+            typeText(document.getElementById("storyText"), event.story);
+            document.querySelectorAll("[data-choice]").forEach(button => {
+              button.addEventListener("click", () => choose(event.choices[Number(button.dataset.choice)]));
+            });
+          }
+          return;
+        }
+
+        card(state.loading ? `
+          <div class="topline">你的平行人生结局</div>
+          <div class="story"><span class="loading">命运生成中……</span></div>
+          ${statsHtml(state.stats)}
+        ` : `
+          <div class="topline">你的平行人生结局</div>
+          <div class="box">
+            <h2>${state.ending.title}</h2>
+            <p class="subtitle" style="margin-top:12px">${state.ending.desc}</p>
+          </div>
+          ${statsHtml(state.stats)}
+          <div id="shareText" class="share">${state.ending.share}</div>
+          <div class="row">
+            <button id="copyBtn">复制分享文案</button>
+            <button class="secondary" id="againBtn">再来一次</button>
+          </div>
+        `);
+        if (!state.loading) {
+          document.getElementById("againBtn").addEventListener("click", restart);
+          document.getElementById("copyBtn").addEventListener("click", copyShare);
+        }
+      }
+
+      function typeText(el, text) {
+        el.textContent = "";
+        let index = 0;
+        const timer = window.setInterval(() => {
+          el.textContent += text[index] || "";
+          index += 1;
+          if (index >= text.length) window.clearInterval(timer);
+        }, 18);
+      }
+
+      function restart() {
+        state = freshState();
+        render();
+      }
+
+      function copyShare() {
+        const text = state.ending.share;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            state.toast = "分享文案已复制。";
+            render();
+          }).catch(selectShareText);
+        } else {
+          selectShareText();
+        }
+      }
+
+      function selectShareText() {
+        const node = document.getElementById("shareText");
+        if (node && window.getSelection) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        state.toast = "已为你选中文案，可以手动复制。";
+        const toast = document.querySelector(".toast");
+        if (toast) toast.textContent = state.toast;
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>
