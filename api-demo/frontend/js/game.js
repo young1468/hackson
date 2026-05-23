@@ -450,27 +450,28 @@ function drawGame() {
 function drawEnding() {
   buttons = [];
   drawTitle();
-  drawCard(50, 190, 440, 420, state.profile.color);
+  drawCard(42, 150, 456, 500, state.profile.color);
   ctx.fillStyle = state.profile.color;
-  ctx.font = "900 60px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
+  ctx.font = "900 58px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(state.profile.avatar, 270, 300);
+  ctx.fillText(state.profile.avatar, 270, 260);
   ctx.fillStyle = "white";
-  ctx.font = "800 28px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  splitText(state.ending.title, 360).slice(0, 2).forEach((line, i) => ctx.fillText(line, 270, 370 + i * 36));
-  ctx.font = FONT_TEXT;
-  splitText(state.ending.desc, 360).slice(0, 4).forEach((line, i) => ctx.fillText(line, 270, 470 + i * 32));
+  ctx.font = "800 26px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
+  splitText(state.ending.title, 380).slice(0, 2).forEach((line, i) => ctx.fillText(line, 270, 330 + i * 34));
+  ctx.font = '700 18px "PingFang SC", "Microsoft YaHei", sans-serif';
+  const descLines = splitText(state.ending.desc, 372).slice(0, 7);
+  descLines.forEach((line, i) => ctx.fillText(line, 270, 425 + i * 28));
   ctx.textAlign = "left";
 
-  drawCard(50, 640, 440, 100, "#00d0ff");
+  drawCard(50, 680, 440, 94, "#00d0ff");
   ctx.fillStyle = "rgba(255,255,255,.85)";
-  ctx.font = FONT_SMALL;
-  splitText(state.share, 390).slice(0, 3).forEach((line, i) => ctx.fillText(line, 76, 674 + i * 24));
+  ctx.font = '600 14px "PingFang SC", "Microsoft YaHei", sans-serif';
+  splitText(state.share, 390).slice(0, 3).forEach((line, i) => ctx.fillText(line, 76, 708 + i * 22));
 
-  drawButton(70, 800, 180, 68, "复制文案", state.profile.color, !state.share);
-  drawButton(290, 800, 180, 68, "重新开始", "#374151");
-  buttons.push({ id: "copy", x: 70, y: 800, w: 180, h: 68 });
-  buttons.push({ id: "restart", x: 290, y: 800, w: 180, h: 68 });
+  drawButton(70, 820, 180, 68, "复制文案", state.profile.color, !state.share);
+  drawButton(290, 820, 180, 68, "重新开始", "#374151");
+  buttons.push({ id: "copy", x: 70, y: 820, w: 180, h: 68 });
+  buttons.push({ id: "restart", x: 290, y: 820, w: 180, h: 68 });
 }
 
 function startProfile() {
@@ -579,7 +580,7 @@ async function finishGame() {
     if (runId !== state.runId) return;
     state.ending = {
       title: String(data && data.title || localEnding().title).slice(0, 24),
-      desc: String(data && data.description || localEnding().desc).slice(0, 120)
+      desc: String(data && data.description || localEnding().desc).slice(0, 90)
     };
     state.share = String(data && data.shareText || `我在《一分钟人生岔路口》里活成了：${state.ending.title}`).slice(0, 100);
   } catch (_) {
