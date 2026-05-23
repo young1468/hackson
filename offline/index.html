@@ -1,818 +1,1340 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f3e8">
-<title>一分钟人生岔路口</title>
-<style>
-  *,*::before,*::after{box-sizing:border-box}
-  html,body{margin:0;min-height:100%;overflow-x:hidden}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-    color:#18202f;
-    -webkit-tap-highlight-color:transparent;
-    background:
-      radial-gradient(circle at 14% 12%,rgba(255,214,102,.55),transparent 28%),
-      radial-gradient(circle at 88% 10%,rgba(79,209,197,.42),transparent 30%),
-      linear-gradient(160deg,#f7f3e8 0%,#eaf5f2 47%,#f5e8ef 100%);
-  }
-  .app{
-    width:100%;min-height:100vh;min-height:100svh;
-    display:flex;align-items:center;justify-content:center;padding:18px;
-  }
-  .card{
-    width:min(100%,440px);
-    display:flex;flex-direction:column;gap:18px;
-    padding:22px;
-    border:1px solid rgba(24,32,47,.12);
-    border-radius:14px;
-    background:rgba(255,255,255,.82);
-    box-shadow:0 18px 55px rgba(55,62,78,.16);
-    backdrop-filter:blur(14px);
-    animation:rise .26s ease-out;
-  }
-  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  h1,h2,h3,p{margin:0}
-  h1{font-size:32px;line-height:1.1}
-  h2{font-size:24px;line-height:1.18}
-  .topline{color:#4e5a6d;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .subtitle{color:#536174;font-size:16px;line-height:1.65}
-
-  /* progress dots */
-  .dots{display:flex;gap:6px}
-  .dots i{flex:1;height:4px;border-radius:2px;background:rgba(24,32,47,.12);transition:background .25s}
-  .dots i.done{background:#2bb3a3}
-  .dots i.now{background:#ffcf5a}
-
-  /* story */
-  .story{
-    min-height:120px;
-    padding:16px;
-    border:1px solid rgba(24,32,47,.1);
-    border-radius:10px;
-    background:#fffdf8;
-    font-size:18px;line-height:1.65;
-    white-space:pre-wrap;
-    cursor:pointer;
-    position:relative;
-  }
-  .story .hint{
-    position:absolute;right:10px;bottom:6px;
-    font-size:11px;color:#8a93a3;opacity:0;transition:opacity .2s;
-  }
-  .story.typing .hint{opacity:1}
-  .story .caret{display:inline-block;width:6px;height:1em;vertical-align:-2px;background:#2bb3a3;margin-left:2px;animation:blink 1s steps(1) infinite}
-  @keyframes blink{50%{opacity:0}}
-
-  /* role / ending */
-  .role-box,.ending-box{
-    padding:16px;border-radius:10px;background:#fffdf8;
-    border:1px solid rgba(24,32,47,.1);
-  }
-  .role-name{font-size:28px;font-weight:800;margin-bottom:6px}
-  .reel{
-    height:42px;overflow:hidden;font-size:30px;font-weight:800;
-    color:#18202f;letter-spacing:.5px;
-  }
-  .reel .track{display:flex;flex-direction:column;transition:transform .42s cubic-bezier(.2,.7,.2,1)}
-  .reel .track > div{height:42px;line-height:42px}
-
-  /* stats */
-  .stats{display:grid;gap:10px}
-  .stat{position:relative}
-  .stat-head{display:flex;justify-content:space-between;font-size:13px;color:#435064;margin-bottom:4px}
-  .stat-head strong{font-variant-numeric:tabular-nums}
-  .bar{height:8px;border-radius:999px;background:rgba(24,32,47,.09);overflow:hidden}
-  .bar > span{display:block;height:100%;width:50%;border-radius:inherit;background:linear-gradient(90deg,#2bb3a3,#f2bf4d);transition:width .5s cubic-bezier(.2,.7,.2,1)}
-  .delta{
-    position:absolute;right:0;top:-2px;font-size:12px;font-weight:700;
-    pointer-events:none;opacity:0;
-  }
-  .delta.up{color:#1f9e72}
-  .delta.down{color:#c2533a}
-  .delta.show{animation:floatUp 1s ease-out forwards}
-  @keyframes floatUp{
-    0%{opacity:0;transform:translateY(6px)}
-    15%{opacity:1}
-    100%{opacity:0;transform:translateY(-18px)}
-  }
-
-  /* buttons */
-  .choices{display:grid;gap:10px}
-  button{
-    width:100%;min-height:50px;border:0;border-radius:10px;
-    padding:13px 16px;font:inherit;font-weight:700;color:#172033;
-    background:#ffcf5a;box-shadow:0 8px 18px rgba(140,105,26,.18);
-    cursor:pointer;touch-action:manipulation;
-    transition:transform .08s ease, opacity .2s;
-  }
-  button:active:not(:disabled){transform:translateY(1px)}
-  button.secondary{background:#d9f0ed;box-shadow:none}
-  button.ghost{background:#eef1f5;box-shadow:none;font-weight:600}
-  button:disabled{opacity:.5;cursor:default}
-  .row{display:flex;gap:10px}
-  .row button{flex:1}
-
-  .result{
-    padding:12px 14px;
-    border-left:4px solid #2bb3a3;
-    border-radius:6px;
-    background:rgba(43,179,163,.1);
-    color:#263247;font-size:14px;line-height:1.55;
-    animation:rise .25s ease-out;
-  }
-  .result b{display:block;margin-bottom:5px;font-size:15px;color:#172033}
-  .result p{margin:0}
-
-  .recap{
-    display:grid;gap:8px;max-height:200px;overflow-y:auto;
-    padding:12px;border-radius:10px;background:#fffdf8;
-    border:1px solid rgba(24,32,47,.08);
-    font-size:13px;line-height:1.5;color:#3d4757;
-  }
-  .recap div{display:flex;gap:8px}
-  .recap b{flex:0 0 18px;color:#2bb3a3;font-weight:700}
-
-  .share{
-    user-select:text;padding:13px;border-radius:10px;
-    background:#eef1f5;color:#263247;line-height:1.5;font-size:14px;
-  }
-  .toast{
-    min-height:20px;color:#a45038;font-size:13px;text-align:center;
-    transition:opacity .2s;
-  }
-
-  /* tutorial */
-  .rules{display:grid;gap:10px;padding:14px;border-radius:10px;background:#fffdf8;border:1px solid rgba(24,32,47,.1);font-size:14px;line-height:1.6;color:#3d4757}
-  .rules .item{display:flex;gap:10px}
-  .rules .item b{flex:0 0 56px;color:#18202f;font-weight:700}
-  .stat-hint{font-size:12px;color:#7a8497;line-height:1.5;padding:0 2px}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#2bb3a3;color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:1px}
-  .meta{font-size:12px;color:#7a8497;text-align:center}
-
-  @media (max-width:360px){
-    .app{padding:12px}
-    .card{padding:18px;gap:14px}
-    h1{font-size:28px}
-    .story{font-size:16px;min-height:100px}
-  }
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
-  }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>一分钟人生岔路口</title>
+  <style>
+    :root{
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; height:100%; overflow:hidden; background:#0b1020; }
+    body{
+      font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+      color:#10162a;
+      touch-action:none;
+    }
+    #wrap{
+      width:100vw;
+      height:100vh;
+      position:relative;
+      padding:var(--sat) var(--sar) var(--sab) var(--sal);
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      border-radius:20px;
+      background:#0b1020;
+    }
+    #fatal{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      color:#1a243a;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255, 210, 99, .55), transparent 44%),
+        radial-gradient(circle at 85% 22%, rgba(82, 209, 196, .42), transparent 48%),
+        linear-gradient(160deg, #fbf1d8 0%, #e8faf6 48%, #f5e3ef 100%);
+    }
+    #fatal .card{
+      width:min(420px, 100%);
+      padding:18px 18px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.86);
+      border:1px solid rgba(18,24,38,.14);
+      box-shadow:0 18px 55px rgba(20, 28, 48, .18);
+      backdrop-filter: blur(10px);
+    }
+    #fatal h1{
+      margin:0 0 8px;
+      font-size:22px;
+      letter-spacing:.2px;
+    }
+    #fatal p{
+      margin:0;
+      font-size:16px;
+      line-height:1.7;
+      color:#33425f;
+    }
+  </style>
 </head>
 <body>
-<main id="app" class="app"></main>
-<script>
-(() => {
-  "use strict";
+  <div id="wrap">
+    <canvas id="c" aria-label="一分钟人生岔路口 Canvas"></canvas>
+    <div id="fatal" role="alert" aria-live="assertive">
+      <div class="card">
+        <h1>哎呀，出错了</h1>
+        <p>哎呀，出错了，请重启试试吧~</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      "use strict";
+      const ERROR_TEXT = "哎呀，出错了，请重启试试吧~";
+      try {
+        const LOGICAL_W = 750;
+        const LOGICAL_H = 1334;
+        const TOTAL_STEPS = 6;
+        const STORAGE_KEY = "life-crossroads.canvas.bestRecord.v1";
+        const canvas = document.getElementById("c");
+        const fatal = document.getElementById("fatal");
+        const wrap = document.getElementById("wrap");
+        const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+        if (!ctx) throw new Error("Canvas 2D context unavailable");
 
-  // ====== 数据 ======
-  const TOTAL_STEPS = 6;
-  const STAT_KEYS = ["mood","money","luck","crazy"];
-  const STAT_LABELS = {mood:"心态",money:"钱包",luck:"运气",crazy:"离谱值"};
+        const STATS = [
+          { key: "mood", label: "心态", c0: "#37cbbf", c1: "#7be9e1" },
+          { key: "money", label: "钱包", c0: "#f5b340", c1: "#ffe6a3" },
+          { key: "luck", label: "运气", c0: "#4d84ff", c1: "#a9c3ff" },
+          { key: "crazy", label: "离谱值", c0: "#ff5d79", c1: "#ffb5c2" }
+        ];
 
-  const ROLES = [
-    {id:"student",name:"大学生",desc:"你有三份作业、两门考试和一颗想睡到自然醒的心。",stats:{mood:62,money:38,luck:55,crazy:35}},
-    {id:"office", name:"社畜",  desc:"你熟练掌握表情包回复、会议点头和把咖啡当护身符。",stats:{mood:52,money:58,luck:45,crazy:42}},
-    {id:"startup",name:"创业者",desc:"你拥有一个商业计划、一张空白表格和一种明天就会起飞的错觉。",stats:{mood:68,money:42,luck:48,crazy:62}},
-    {id:"cat",    name:"猫",    desc:"你没有工作，但全家都在为你的情绪价值打工。",stats:{mood:74,money:28,luck:64,crazy:55}},
-    {id:"space",  name:"外星人",desc:"你刚降落地球，误以为便利店关东煮是能量核心。",stats:{mood:60,money:24,luck:58,crazy:75}}
-  ];
+        const ROLES = [
+          { id: "student", name: "大学生", badge: "DDL 边缘徘徊", palette: { a: "#ffb703", b: "#8ecae6", hair: "#2a2f45", skin: "#ffd7c2" }, base: { mood: 62, money: 38, luck: 55, crazy: 35 }, portrait: { hair: "short", acc: "book" } },
+          { id: "office", name: "社畜", badge: "会议生存专家", palette: { a: "#ffd166", b: "#06d6a0", hair: "#1c2338", skin: "#ffd2b5" }, base: { mood: 52, money: 58, luck: 45, crazy: 42 }, portrait: { hair: "side", acc: "tie" } },
+          { id: "startup", name: "创业者", badge: "PPT 点火者", palette: { a: "#ff8fab", b: "#bde0fe", hair: "#3b2f2f", skin: "#ffe0c8" }, base: { mood: 68, money: 42, luck: 48, crazy: 62 }, portrait: { hair: "bun", acc: "laptop" } },
+          { id: "cat", name: "猫", badge: "全家真正老板", palette: { a: "#b8f2e6", b: "#ffa69e", hair: "#2b2b3a", skin: "#ffe0cc" }, base: { mood: 74, money: 28, luck: 64, crazy: 55 }, portrait: { hair: "wave", acc: "paw" } },
+          { id: "space", name: "外星人", badge: "地球临时访客", palette: { a: "#fca311", b: "#90e0ef", hair: "#252634", skin: "#ffd6c7" }, base: { mood: 60, money: 24, luck: 58, crazy: 75 }, portrait: { hair: "messy", acc: "compass" } }
+        ];
 
-  const EVENTS = {
-    student:[
-      {story:"凌晨一点，论文只写了标题。室友问你要不要一起点夜宵，说这也算学术燃料。",choices:[
-        {text:"点最大份，边吃边写",result:"你吃出了灵感，也吃出了困意。论文开头像菜单，导师沉默了。",effects:{mood:8,money:-14,luck:-2,crazy:10}},
-        {text:"拒绝夜宵，打开文献",result:"你读完摘要后开始敬畏知识，顺便睡着了二十分钟。",effects:{mood:-4,money:4,luck:6,crazy:-3}}
-      ]},
-      {story:"老师突然说下节课随堂展示。你的 PPT 还停留在“新建演示文稿”。",choices:[
-        {text:"用极简风硬讲",result:"三页空白被你讲成了哲学。老师说你很有留白意识。",effects:{mood:10,money:0,luck:10,crazy:14}},
-        {text:"请求组员救命",result:"组员发来一个压缩包，里面还有三个压缩包。",effects:{mood:-8,money:0,luck:2,crazy:8}}
-      ]},
-      {story:"校园卡余额只剩三块二，但食堂窗口今天出了隐藏菜。",choices:[
-        {text:"冲向隐藏菜",result:"阿姨看你眼神坚定，多给了一勺。你短暂相信命运。",effects:{mood:12,money:-3,luck:12,crazy:3}},
-        {text:"买白饭配想象力",result:"你把白饭吃出了纪录片旁白感，精神上很富足。",effects:{mood:-4,money:6,luck:0,crazy:8}}
-      ]},
-      {story:"社团招新让你扮演吉祥物，你发现服装里比图书馆还安静。",choices:[
-        {text:"认真挥手营业",result:"你被小朋友围住合影，社团误以为你天生适合公关。",effects:{mood:8,money:0,luck:9,crazy:7}},
-        {text:"躲进角落降温",result:"你被当成沉浸式雕塑，路过的人开始许愿。",effects:{mood:-2,money:0,luck:5,crazy:13}}
-      ]},
-      {story:"考试前夜，群里流传一份“重点”，文件名叫最终最终真最终。",choices:[
-        {text:"相信重点",result:"考卷确实有重点，只是重点在你没看的下一页。",effects:{mood:-10,money:0,luck:-8,crazy:4}},
-        {text:"自己梳理提纲",result:"你发现自己会的不多，但至少知道不会在哪里。",effects:{mood:3,money:0,luck:8,crazy:-4}}
-      ]},
-      {story:"你在图书馆抢到了插座位，但旁边同学键盘声像小型降雨。",choices:[
-        {text:"戴耳机进入专注模式",result:"耳机没电了。你开始和键盘雨达成节奏合作。",effects:{mood:-3,money:0,luck:-2,crazy:8}},
-        {text:"换到窗边",result:"窗边阳光很好，你的学习效率和植物同步提升。",effects:{mood:9,money:0,luck:6,crazy:-2}}
-      ]},
-      {story:"你报名了志愿活动，到了现场才知道任务是教大爷使用智能电视。",choices:[
-        {text:"耐心讲遥控器",result:"大爷学会了投屏，还反过来教你修自行车。",effects:{mood:10,money:0,luck:10,crazy:2}},
-        {text:"直接写使用说明",result:"说明写得很正式，大爷看完说像小区公告。",effects:{mood:-2,money:0,luck:2,crazy:5}}
-      ]},
-      {story:"宿舍突然停电，大家围着充电宝像围着古代火种。",choices:[
-        {text:"贡献自己的充电宝",result:"你成为临时首领，但手机只剩百分之九。",effects:{mood:6,money:0,luck:6,crazy:8}},
-        {text:"保存电量装睡",result:"你成功省电，却错过了室友即兴讲鬼故事改成讲冷笑话。",effects:{mood:0,money:0,luck:-3,crazy:-2}}
-      ]}
-    ],
-    office:[
-      {story:"老板问“这个需求简单吧”，会议室空气突然变得很懂事。",choices:[
-        {text:"回复：问题不大",result:"老板立刻把你拉进三个会议，问题长出了翅膀。",effects:{mood:-12,money:0,luck:-4,crazy:9}},
-        {text:"说需要评估",result:"大家点头，你获得了二十分钟神圣缓冲区。",effects:{mood:5,money:0,luck:6,crazy:-2}}
-      ]},
-      {story:"测试环境突然不动了，同事们看向你，仿佛你认识每一行日志。",choices:[
-        {text:"先重启服务",result:"服务暂时好了，但你知道这只是剧情第一集。",effects:{mood:-8,money:0,luck:-3,crazy:8}},
-        {text:"说这是缓存问题",result:"大家沉默三秒，然后居然信了。缓存背起了今天的锅。",effects:{mood:6,money:0,luck:10,crazy:15}}
-      ]},
-      {story:"下午茶到了，只剩最后一杯奶茶，标签上写着“无糖加珍珠”。",choices:[
-        {text:"拿下它",result:"你喝到了珍珠，也喝到了同事的凝视。",effects:{mood:9,money:0,luck:-2,crazy:4}},
-        {text:"让给别人",result:"你获得了办公室好人卡，附带一块没人要的苏打饼。",effects:{mood:3,money:0,luck:6,crazy:-1}}
-      ]},
-      {story:"日报系统在下班前提醒你：今天还没有任何产出。",choices:[
-        {text:"写“推进若干事项”",result:"这句话像万能胶，粘住了今天。",effects:{mood:4,money:0,luck:5,crazy:6}},
-        {text:"认真列十条",result:"你发现自己确实忙了一天，但忙得像开了静音。",effects:{mood:-3,money:0,luck:3,crazy:-2}}
-      ]},
-      {story:"电梯里遇到领导，你们共同盯着楼层数字，像在参加无声辩论。",choices:[
-        {text:"主动寒暄",result:"领导想起一个新点子，你想起自己为什么不该说话。",effects:{mood:-9,money:0,luck:-5,crazy:7}},
-        {text:"假装看消息",result:"手机屏幕是空的，但你的演技很满。",effects:{mood:4,money:0,luck:2,crazy:3}}
-      ]},
-      {story:"上线前十分钟，产品说按钮颜色“有点不够命运感”。",choices:[
-        {text:"调成更亮的黄",result:"产品满意了，按钮像刚考上公务员一样精神。",effects:{mood:3,money:0,luck:4,crazy:7}},
-        {text:"请求下个版本再说",result:"你保住了上线窗口，也获得一条未来待办。",effects:{mood:7,money:0,luck:2,crazy:-3}}
-      ]},
-      {story:"团建抽签，你抽中了“即兴表演公司价值观”。",choices:[
-        {text:"用相声方式表演",result:"全场笑了，HR 说你很有组织温度。",effects:{mood:12,money:0,luck:8,crazy:14}},
-        {text:"把机会让给主管",result:"主管表演了三分钟，你的工位安全了三个月。",effects:{mood:6,money:0,luck:6,crazy:-2}}
-      ]},
-      {story:"你准备下班，电脑弹出系统更新：预计 47 分钟。",choices:[
-        {text:"现在更新",result:"更新完天都黑了，但电脑像换了个清爽发型。",effects:{mood:-5,money:0,luck:3,crazy:2}},
-        {text:"明天再说",result:"你合上电脑，更新提示在梦里继续追你。",effects:{mood:8,money:0,luck:-3,crazy:5}}
-      ]}
-    ],
-    startup:[
-      {story:"投资人问你商业模式是什么，你的脑海里弹出一张还没填完的表。",choices:[
-        {text:"讲平台生态",result:"投资人点头，你也不知道他懂了还是困了。",effects:{mood:8,money:6,luck:5,crazy:10}},
-        {text:"诚实说还在验证",result:"空气短暂停顿，但你收获了一句“很真实”。",effects:{mood:-2,money:0,luck:8,crazy:-4}}
-      ]},
-      {story:"团队群里有人问这个月工资什么时候发，群名忽然显得很创业。",choices:[
-        {text:"发一段热血语音",result:"大家听完沉默，财务发来余额截图更热血。",effects:{mood:-7,money:-8,luck:-3,crazy:11}},
-        {text:"先发一半",result:"钱包瘦了，团队稳了，咖啡从拿铁降级为速溶。",effects:{mood:5,money:-18,luck:6,crazy:-2}}
-      ]},
-      {story:"你发现竞品上线了和你一模一样的功能，还多了一个会动的按钮。",choices:[
-        {text:"立刻开会反击",result:"会议产出三十个想法和一个更会动的按钮。",effects:{mood:-4,money:-3,luck:2,crazy:13}},
-        {text:"先问用户要不要",result:"用户说按钮动不动都行，关键是别卡。你被现实教育了。",effects:{mood:4,money:0,luck:9,crazy:-5}}
-      ]},
-      {story:"路演现场投影仪识别不出你的电脑，仿佛资本市场先识别出了风险。",choices:[
-        {text:"脱稿讲",result:"你越讲越顺，PPT 成为不在场的传奇。",effects:{mood:10,money:5,luck:12,crazy:8}},
-        {text:"现场换设备",result:"设备好了，字体乱了。你的标题像刚经历长途旅行。",effects:{mood:-6,money:0,luck:-3,crazy:5}}
-      ]},
-      {story:"第一位付费用户出现了，但备注写着：买错了，能退吗。",choices:[
-        {text:"真诚退款",result:"用户感动，转介绍了一个真的会用的人。",effects:{mood:5,money:-4,luck:11,crazy:-2}},
-        {text:"询问买错原因",result:"你收获了三页反馈，和一份产品命名危机。",effects:{mood:-2,money:0,luck:7,crazy:6}}
-      ]},
-      {story:"合伙人说应该做品牌升级，你们现在的 logo 是圆角矩形里一个字。",choices:[
-        {text:"升级 logo",result:"新 logo 像一家认真卖云朵的公司，大家莫名振奋。",effects:{mood:9,money:-8,luck:3,crazy:8}},
-        {text:"先升级产品",result:"logo 继续朴素，用户终于少点了一次返回。",effects:{mood:6,money:0,luck:8,crazy:-6}}
-      ]},
-      {story:"你准备发新闻稿，但公司最大的新闻是绿植活过了三周。",choices:[
-        {text:"写成团队韧性故事",result:"稿子很感人，绿植被任命为精神顾问。",effects:{mood:8,money:0,luck:5,crazy:13}},
-        {text:"暂时不发",result:"你保住了品牌调性，也保住了绿植的隐私。",effects:{mood:2,money:0,luck:3,crazy:-4}}
-      ]},
-      {story:"深夜服务器费用提醒弹出，你第一次觉得云也会下账单。",choices:[
-        {text:"优化资源",result:"账单降了，代码也被你整理得像刚搬家。",effects:{mood:6,money:12,luck:5,crazy:-3}},
-        {text:"先充值续命",result:"服务稳了，钱包轻了，你给云端点了份夜宵。",effects:{mood:-2,money:-15,luck:2,crazy:4}}
-      ]}
-    ],
-    cat:[
-      {story:"铲屎官买了新猫窝，但快递箱看起来更有建筑美学。",choices:[
-        {text:"入住快递箱",result:"你宣布这里是新王宫，猫窝成为王宫旁的停车场。",effects:{mood:12,money:0,luck:5,crazy:9}},
-        {text:"勉强试猫窝",result:"你睡了三分钟，给足了人类面子。",effects:{mood:5,money:0,luck:2,crazy:-2}}
-      ]},
-      {story:"凌晨四点，你突然想起客厅还有一条看不见的赛道。",choices:[
-        {text:"全速冲刺",result:"人类惊醒，你完成个人最好成绩。",effects:{mood:10,money:0,luck:-2,crazy:15}},
-        {text:"改为安静巡视",result:"你像小区保安一样检查每个角落，威严但不扰民。",effects:{mood:4,money:0,luck:5,crazy:-4}}
-      ]},
-      {story:"碗里还有粮，但你能看见碗底一小块白色，这显然是重大危机。",choices:[
-        {text:"立刻呼叫人类",result:"人类补满了碗，你确认世界恢复秩序。",effects:{mood:9,money:0,luck:4,crazy:6}},
-        {text:"先象征性吃两口",result:"你发现粮还行，但原则上仍需投诉。",effects:{mood:3,money:0,luck:2,crazy:2}}
-      ]},
-      {story:"窗外飞过一片树叶，你判断它需要被严肃观察。",choices:[
-        {text:"贴窗监控",result:"树叶离开了，你守护了这片领空。",effects:{mood:7,money:0,luck:6,crazy:5}},
-        {text:"呼叫人类一起看",result:"人类没看懂，但夸你可爱。你接受了表彰。",effects:{mood:10,money:0,luck:3,crazy:3}}
-      ]},
-      {story:"人类正在开视频会议，你发现键盘正好适合躺下。",choices:[
-        {text:"占领键盘",result:"会议里出现一串神秘字符，同事们认为这是高级加密。",effects:{mood:11,money:0,luck:8,crazy:14}},
-        {text:"坐在摄像头前",result:"会议效率提升，因为所有人都在夸你。",effects:{mood:9,money:0,luck:7,crazy:6}}
-      ]},
-      {story:"洗澡水声响起，你怀疑人类又要进行奇怪的自我淋湿仪式。",choices:[
-        {text:"门口监督",result:"你发出三声质询，人类表示尊重但继续淋湿。",effects:{mood:3,money:0,luck:2,crazy:8}},
-        {text:"远离现场",result:"你躲到沙发下，保持皮毛文明。",effects:{mood:6,money:0,luck:4,crazy:-5}}
-      ]},
-      {story:"新玩具是一只会响的小球，你决定评估它是否配得上你。",choices:[
-        {text:"疯狂扑球",result:"小球滚进沙发底，你的狩猎进入考古阶段。",effects:{mood:8,money:0,luck:-3,crazy:9}},
-        {text:"冷淡走开",result:"人类立刻开始逗你，你成功让玩具变成人类玩具。",effects:{mood:6,money:0,luck:5,crazy:4}}
-      ]},
-      {story:"阳光落在地板上，形成一块刚好容纳猫的黄金地段。",choices:[
-        {text:"立刻躺平",result:"你被晒成一条温热的主宰，生活恢复高级。",effects:{mood:13,money:0,luck:6,crazy:-3}},
-        {text:"先绕三圈",result:"仪式完成，阳光地段正式归你所有。",effects:{mood:8,money:0,luck:4,crazy:5}}
-      ]}
-    ],
-    space:[
-      {story:"你降落在便利店门口，自动门打开，你以为地球在欢迎外交使团。",choices:[
-        {text:"向门鞠躬",result:"店员也点了点头。你们完成了跨文明礼仪。",effects:{mood:8,money:0,luck:7,crazy:8}},
-        {text:"研究门的魔法",result:"你站了五分钟，门开了二十次，地球科技让你肃然起敬。",effects:{mood:5,money:0,luck:2,crazy:12}}
-      ]},
-      {story:"你第一次看见奶茶菜单，上面有三十种甜度和四十种小料。",choices:[
-        {text:"全都加一点",result:"杯子沉甸甸的，像一颗可饮用小行星。",effects:{mood:9,money:-12,luck:3,crazy:14}},
-        {text:"选择店员推荐",result:"你喝到正常奶茶，开始理解地球人的温柔陷阱。",effects:{mood:7,money:-6,luck:5,crazy:-2}}
-      ]},
-      {story:"地铁广播提醒先下后上，你以为这是地球人的哲学课。",choices:[
-        {text:"认真记录",result:"你写下：文明的核心是让门口保持流动。",effects:{mood:5,money:0,luck:6,crazy:4}},
-        {text:"跟着人群移动",result:"你被精准送进车厢，像一颗被社会算法排序的豆子。",effects:{mood:-2,money:0,luck:5,crazy:8}}
-      ]},
-      {story:"共享单车需要扫码，你把二维码当成地球部落图腾。",choices:[
-        {text:"拍照研究",result:"你没有解锁车，但收获了一张很端正的图腾照片。",effects:{mood:-2,money:0,luck:-3,crazy:6}},
-        {text:"请路人帮忙",result:"路人教会你扫码，你决定把他列为地球导师。",effects:{mood:8,money:-2,luck:9,crazy:-3}}
-      ]},
-      {story:"你听见有人说“摸鱼”，四处寻找水源和鱼。",choices:[
-        {text:"认真询问鱼在哪里",result:"大家笑了，然后告诉你这是一种精神游泳。",effects:{mood:6,money:0,luck:5,crazy:10}},
-        {text:"假装听懂",result:"你点头过于坚定，被邀请加入午休散步小队。",effects:{mood:7,money:0,luck:7,crazy:5}}
-      ]},
-      {story:"你第一次坐电梯，楼层数字上升，你怀疑飞船偷偷启动了。",choices:[
-        {text:"按住扶手稳定重心",result:"旁边小朋友也学你扶住墙，电梯里形成临时训练营。",effects:{mood:4,money:0,luck:4,crazy:7}},
-        {text:"欣赏垂直旅行",result:"你宣布地球短途航天技术很成熟。",effects:{mood:9,money:0,luck:6,crazy:6}}
-      ]},
-      {story:"手机电量只剩百分之一，你意识到通讯水晶即将休眠。",choices:[
-        {text:"寻找充电口",result:"你在咖啡店发现补给站，并买了一杯入场券。",effects:{mood:5,money:-10,luck:7,crazy:1}},
-        {text:"启动省电仪式",result:"你把屏幕调暗到像宇宙深处，成功多撑十分钟。",effects:{mood:2,money:0,luck:4,crazy:4}}
-      ]},
-      {story:"你被邀请参加广场舞，音乐响起时，地面似乎拥有了集体意识。",choices:[
-        {text:"加入队形",result:"你的动作不标准，但大家夸你有星际风。",effects:{mood:12,money:0,luck:8,crazy:13}},
-        {text:"在旁边记录",result:"你写下：地球人用同步移动维护邻里关系。",effects:{mood:6,money:0,luck:5,crazy:5}}
-      ]}
-    ]
-  };
+        const makeScene = (id, bg, text, a, ar, ad, b, br, bd) => ({ id, bg, text, choices: [
+          { text: a, result: ar, delta: ad },
+          { text: b, result: br, delta: bd }
+        ]});
 
-  // 显式权重：specificity 越大越优先匹配
-  const ENDINGS = [
-    {w:9, title:"四项全能的岔路口冠军", desc:"你在心态、钱包、运气和离谱值之间走出了奇妙平衡。人生没有标准答案，但你这份挺能发朋友圈。", test:s=>s.mood>=60&&s.money>=50&&s.luck>=60&&s.crazy>=50},
-    {w:8, title:"离谱值超标观察对象", desc:"你的人生报告被标注为“请勿用常识解释”。大家围着你研究，最后决定先请你吃饭。", test:s=>s.crazy>=88},
-    {w:8, title:"心态归零但流程完整", desc:"你一度只剩躯壳在点击选项，但仍然完成了六步。命运给你颁发了坚持参与奖。", test:s=>s.mood<=8},
-    {w:8, title:"运气离线的认真选手", desc:"你每次都认真判断，每次都差一点点。好消息是，你已经练成了平静接受反转的能力。", test:s=>s.luck<=10},
-    {w:8, title:"钱包安静离场的人", desc:"你的钱包像参加了静默修行，存在感很低。但你用想象力补齐了所有仪式感。", test:s=>s.money<=8},
-    {w:7, title:"全靠玄学活下来的幸运体质", desc:"每次局面快要散架，事情都会以奇怪方式自己复位。你没有解决命运，命运选择不为难你。", test:s=>s.luck>=82},
-    {w:7, title:"情绪稳定的反转大师", desc:"无论世界怎样突然改题，你都能把笔握稳。命运看你太淡定，甚至有点不好意思。", test:s=>s.mood>=82},
-    {w:6, title:"存款增长的清醒派", desc:"你多次忍住冲动，钱包终于有了尊严。虽然生活少了点戏剧，但多了点踏实。", test:s=>s.money>=72},
-    {w:5, title:"社交分享型人生样本", desc:"你的经历短、密、好转述，像一条会自己配字幕的人生短片。朋友听完只想问：还有吗？", test:s=>s.mood>=70&&s.crazy>=60},
-    {w:5, title:"正常世界的异常补丁", desc:"你试图按常理生活，但常理看见你就开始拐弯。最终你成为身边人的每日小剧场。", test:s=>s.crazy>=72&&s.mood>=45},
-    {w:5, title:"余额三块但精神富翁", desc:"你没攒下多少钱，却攒下了大量离谱经历。朋友问你怎么撑过来的，你说主要靠心态和热水。", test:s=>s.money<=12&&s.mood>=55},
-    {w:4, title:"低调但很会活的普通英雄", desc:"你没有惊天动地，只是在每个岔路口稳稳落脚。平凡今天，也算被你经营得像样。", test:s=>s.crazy<=30&&s.mood>=60},
-    {w:4, title:"被生活随机播放的人", desc:"你的六次选择像歌单随机播放，上一秒励志，下一秒跑偏。可你居然把节奏踩住了。", test:s=>s.luck>=55&&s.crazy>=55},
-    {w:3, title:"小心翼翼的稳定玩家", desc:"你没有把数值拉爆，也没有让世界崩盘。你用谨慎换来了一个能睡好觉的结局。", test:s=>s.crazy<45&&s.money>=45},
-    {w:1, title:"一边崩坏一边发光", desc:"有些属性已经报警，但你的故事仍然完整。你不是没有波动，你只是很会带着波动继续走。", test:s=>s.mood<=25||s.money<=20||s.luck<=20}
-  ];
+        const EVENTS = {
+          student: [
+            makeScene("s1",{type:"room",time:"night"},"凌晨一点，论文只写了标题，室友说夜宵也是学术燃料。","点最大份边吃边写","你吃出了灵感，也吃出了困意。论文开头像菜单。",{mood:8,money:-14,luck:-2,crazy:10},"拒绝夜宵打开文献","你读完摘要后开始敬畏知识，顺便睡着二十分钟。",{mood:-4,money:4,luck:6,crazy:-3}),
+            makeScene("s2",{type:"library",time:"day"},"老师突然说下节课随堂展示，你的 PPT 还停在新建页面。","用极简风硬讲","三页空白被你讲成了哲学，老师说你很有留白意识。",{mood:10,luck:10,crazy:14},"请求组员救命","组员发来一个压缩包，里面还有三个压缩包。",{mood:-8,luck:2,crazy:8}),
+            makeScene("s3",{type:"cafe",time:"day"},"校园卡只剩三块二，但食堂窗口今天出了隐藏菜。","冲向隐藏菜","阿姨看你眼神坚定，多给了一勺。",{mood:12,money:-3,luck:12,crazy:3},"买白饭配想象力","你把白饭吃出了纪录片旁白感。",{mood:-4,money:6,crazy:8}),
+            makeScene("s4",{type:"city",time:"day"},"社团招新让你扮吉祥物，你发现服装里比图书馆还安静。","认真挥手营业","你被围住合影，社团误以为你天生适合公关。",{mood:8,luck:9,crazy:7},"躲进角落降温","你被当成沉浸式雕塑，路过的人开始许愿。",{mood:-2,luck:5,crazy:13}),
+            makeScene("s5",{type:"library",time:"evening"},"考前夜群里流传重点，文件名叫最终最终真最终。","相信重点","考卷确实有重点，只是在你没看的下一页。",{mood:-10,luck:-8,crazy:4},"自己梳理提纲","你发现会的不多，但至少知道不会在哪里。",{mood:3,luck:8,crazy:-4}),
+            makeScene("s6",{type:"library",time:"day"},"你抢到图书馆插座位，旁边键盘声像小型降雨。","戴耳机专注","耳机没电，你开始和键盘雨达成节奏合作。",{mood:-3,luck:-2,crazy:8},"换到窗边","阳光很好，你的学习效率和植物同步提升。",{mood:9,luck:6,crazy:-2}),
+            makeScene("s7",{type:"home",time:"evening"},"志愿活动现场，你的任务是教大爷使用智能电视。","耐心讲遥控器","大爷学会投屏，还反过来教你修自行车。",{mood:10,luck:10,crazy:2},"直接写说明书","说明写得很正式，大爷说像小区公告。",{mood:-2,luck:2,crazy:5}),
+            makeScene("s8",{type:"room",time:"night"},"宿舍突然停电，大家围着充电宝像围着古代火种。","贡献充电宝","你成为临时首领，但手机只剩百分之九。",{mood:6,luck:6,crazy:8},"保存电量装睡","你省下电，却错过了室友的冷笑话大会。",{luck:-3,crazy:-2})
+          ],
+          office: [
+            makeScene("o1",{type:"office",time:"day"},"老板问这个需求简单吧，会议室空气突然很懂事。","回复问题不大","你被拉进三个会议，问题长出了翅膀。",{mood:-12,luck:-4,crazy:9},"说需要评估","你获得二十分钟神圣缓冲区。",{mood:5,luck:6,crazy:-2}),
+            makeScene("o2",{type:"office",time:"day"},"测试环境突然不动了，同事们看向你，像你认识每行日志。","先重启服务","服务暂时好了，但你知道这只是第一集。",{mood:-8,luck:-3,crazy:8},"说是缓存问题","大家沉默三秒，然后居然信了。",{mood:6,luck:10,crazy:15}),
+            makeScene("o3",{type:"cafe",time:"day"},"下午茶只剩最后一杯奶茶，标签写着无糖加珍珠。","拿下它","你喝到珍珠，也喝到了同事的凝视。",{mood:9,luck:-2,crazy:4},"让给别人","你获得办公室好人卡，附带一块苏打饼。",{mood:3,luck:6,crazy:-1}),
+            makeScene("o4",{type:"office",time:"evening"},"日报系统下班前提醒你：今天还没有任何产出。","写推进若干事项","这句话像万能胶，粘住了今天。",{mood:4,luck:5,crazy:6},"认真列十条","你发现自己忙了一天，但忙得像开了静音。",{mood:-3,luck:3,crazy:-2}),
+            makeScene("o5",{type:"city",time:"day"},"电梯里遇到领导，你们共同盯着楼层数字。","主动寒暄","领导想起一个新点子，你想起自己不该说话。",{mood:-9,luck:-5,crazy:7},"假装看消息","手机屏幕是空的，但你的演技很满。",{mood:4,luck:2,crazy:3}),
+            makeScene("o6",{type:"office",time:"day"},"上线前十分钟，产品说按钮颜色不够命运感。","调成更亮的黄","产品满意了，按钮像刚考上公务员一样精神。",{mood:3,luck:4,crazy:7},"请求下版再说","你保住上线窗口，也获得一条未来待办。",{mood:7,luck:2,crazy:-3}),
+            makeScene("o7",{type:"office",time:"evening"},"团建抽签，你抽中即兴表演公司价值观。","用相声表演","全场笑了，HR 说你很有组织温度。",{mood:12,luck:8,crazy:14},"让给主管","主管表演三分钟，你的工位安全了三个月。",{mood:6,luck:6,crazy:-2}),
+            makeScene("o8",{type:"office",time:"night"},"你准备下班，电脑弹出系统更新：预计 47 分钟。","现在更新","更新完天都黑了，但电脑像换了清爽发型。",{mood:-5,luck:3,crazy:2},"明天再说","你合上电脑，更新提示在梦里继续追你。",{mood:8,luck:-3,crazy:5})
+          ],
+          startup: [
+            makeScene("p1",{type:"office",time:"day"},"投资人问商业模式，你脑海弹出一张没填完的表。","讲平台生态","投资人点头，你也不知道他懂了还是困了。",{mood:8,money:6,luck:5,crazy:10},"诚实说验证中","空气短暂停顿，但你收获了一句很真实。",{mood:-2,luck:8,crazy:-4}),
+            makeScene("p2",{type:"office",time:"evening"},"群里有人问工资什么时候发，群名忽然很创业。","发热血语音","大家听完沉默，财务发来余额截图更热血。",{mood:-7,money:-8,luck:-3,crazy:11},"先发一半","钱包瘦了，团队稳了，咖啡降级为速溶。",{mood:5,money:-18,luck:6,crazy:-2}),
+            makeScene("p3",{type:"office",time:"day"},"竞品上线了同款功能，还多了一个会动的按钮。","开会反击","会议产出三十个想法和更会动的按钮。",{mood:-4,money:-3,luck:2,crazy:13},"先问用户","用户说按钮动不动都行，关键是别卡。",{mood:4,luck:9,crazy:-5}),
+            makeScene("p4",{type:"city",time:"day"},"路演现场投影仪不认电脑，资本市场先识别风险。","脱稿讲","你越讲越顺，PPT 成为不在场的传奇。",{mood:10,money:5,luck:12,crazy:8},"现场换设备","设备好了，字体乱了，标题像刚长途旅行。",{mood:-6,luck:-3,crazy:5}),
+            makeScene("p5",{type:"office",time:"day"},"第一位付费用户出现，备注写着买错了能退吗。","真诚退款","用户感动，转介绍了一个真的会用的人。",{mood:5,money:-4,luck:11,crazy:-2},"询问原因","你收获三页反馈和一份产品命名危机。",{mood:-2,luck:7,crazy:6}),
+            makeScene("p6",{type:"office",time:"day"},"合伙人说要品牌升级，你们 logo 还是圆角矩形里一个字。","升级 logo","新 logo 像认真卖云朵的公司，大家莫名振奋。",{mood:9,money:-8,luck:3,crazy:8},"先升级产品","logo 继续朴素，用户终于少点了一次返回。",{mood:6,luck:8,crazy:-6}),
+            makeScene("p7",{type:"library",time:"evening"},"你准备发新闻稿，但最大新闻是绿植活过三周。","写成韧性故事","稿子很感人，绿植被任命为精神顾问。",{mood:8,luck:5,crazy:13},"暂时不发","你保住品牌调性，也保住了绿植的隐私。",{mood:2,luck:3,crazy:-4}),
+            makeScene("p8",{type:"roof",time:"night"},"深夜服务器账单弹出，你第一次觉得云也会下账单。","优化资源","账单降了，代码也像刚搬家一样整齐。",{mood:6,money:12,luck:5,crazy:-3},"先充值续命","服务稳了，钱包轻了，你给云端点了夜宵。",{mood:-2,money:-15,luck:2,crazy:4})
+          ],
+          cat: [
+            makeScene("c1",{type:"home",time:"day"},"铲屎官买了新猫窝，但快递箱更有建筑美学。","入住快递箱","你宣布这里是新王宫，猫窝成为停车场。",{mood:12,luck:5,crazy:9},"勉强试猫窝","你睡了三分钟，给足了人类面子。",{mood:5,luck:2,crazy:-2}),
+            makeScene("c2",{type:"home",time:"night"},"凌晨四点，你想起客厅还有一条看不见的赛道。","全速冲刺","人类惊醒，你完成个人最好成绩。",{mood:10,luck:-2,crazy:15},"安静巡视","你像小区保安检查每个角落，威严但不扰民。",{mood:4,luck:5,crazy:-4}),
+            makeScene("c3",{type:"cafe",time:"day"},"碗里还有粮，但你看见碗底一小块白色。","立刻呼叫人类","人类补满了碗，你确认世界恢复秩序。",{mood:9,luck:4,crazy:6},"象征性吃两口","粮还行，但原则上仍需投诉。",{mood:3,luck:2,crazy:2}),
+            makeScene("c4",{type:"park",time:"day"},"窗外飞过一片树叶，你判断它需要被严肃观察。","贴窗监控","树叶离开了，你守护了这片领空。",{mood:7,luck:6,crazy:5},"叫人类一起看","人类没看懂，但夸你可爱。",{mood:10,luck:3,crazy:3}),
+            makeScene("c5",{type:"office",time:"day"},"人类开视频会议，你发现键盘正好适合躺下。","占领键盘","会议出现神秘字符，同事认为这是高级加密。",{mood:11,luck:8,crazy:14},"坐在镜头前","会议效率提升，因为所有人都在夸你。",{mood:9,luck:7,crazy:6}),
+            makeScene("c6",{type:"home",time:"evening"},"洗澡水声响起，你怀疑人类又要自我淋湿。","门口监督","你发出三声质询，人类尊重但继续淋湿。",{mood:3,luck:2,crazy:8},"远离现场","你躲到沙发下，保持皮毛文明。",{mood:6,luck:4,crazy:-5}),
+            makeScene("c7",{type:"home",time:"day"},"新玩具是一只会响的小球，你决定评估它。","疯狂扑球","小球滚进沙发底，狩猎进入考古阶段。",{mood:8,luck:-3,crazy:9},"冷淡走开","人类立刻开始逗你，玩具变成人类玩具。",{mood:6,luck:5,crazy:4}),
+            makeScene("c8",{type:"room",time:"morning"},"阳光落在地板上，形成刚好容纳猫的黄金地段。","立刻躺平","你被晒成温热的主宰，生活恢复高级。",{mood:13,luck:6,crazy:-3},"先绕三圈","仪式完成，阳光地段正式归你所有。",{mood:8,luck:4,crazy:5})
+          ],
+          space: [
+            makeScene("x1",{type:"city",time:"day"},"你降落在便利店门口，自动门像在欢迎外交使团。","向门鞠躬","店员也点头，你们完成跨文明礼仪。",{mood:8,luck:7,crazy:8},"研究自动门","门开了二十次，地球科技让你肃然起敬。",{mood:5,luck:2,crazy:12}),
+            makeScene("x2",{type:"cafe",time:"day"},"你第一次看奶茶菜单，上面有许多甜度和小料。","全都加一点","杯子沉甸甸，像一颗可饮用小行星。",{mood:9,money:-12,luck:3,crazy:14},"选店员推荐","你开始理解地球人的温柔陷阱。",{mood:7,money:-6,luck:5,crazy:-2}),
+            makeScene("x3",{type:"city",time:"day"},"地铁广播提醒先下后上，你以为这是地球哲学课。","认真记录","你写下：文明核心是让门口保持流动。",{mood:5,luck:6,crazy:4},"跟着人群移动","你被精准送进车厢，像被社会算法排序。",{mood:-2,luck:5,crazy:8}),
+            makeScene("x4",{type:"street",time:"day"},"共享单车需要扫码，你把二维码当成部落图腾。","拍照研究","你没解锁车，但收获端正的图腾照片。",{mood:-2,luck:-3,crazy:6},"请路人帮忙","路人教会你扫码，你把他列为地球导师。",{mood:8,money:-2,luck:9,crazy:-3}),
+            makeScene("x5",{type:"office",time:"day"},"你听见有人说摸鱼，于是开始寻找水源和鱼。","认真询问","大家笑了，然后告诉你这是一种精神游泳。",{mood:6,luck:5,crazy:10},"假装听懂","你点头过于坚定，被邀请加入午休散步小队。",{mood:7,luck:7,crazy:5}),
+            makeScene("x6",{type:"city",time:"evening"},"你第一次坐电梯，楼层数字上升，像飞船启动。","按住扶手","旁边小朋友也学你扶墙，形成临时训练营。",{mood:4,luck:4,crazy:7},"欣赏垂直旅行","你宣布地球短途航天技术很成熟。",{mood:9,luck:6,crazy:6}),
+            makeScene("x7",{type:"cafe",time:"evening"},"手机电量只剩百分之一，通讯水晶即将休眠。","寻找充电口","你在咖啡店发现补给站，并买了一杯入场券。",{mood:5,money:-10,luck:7,crazy:1},"启动省电仪式","屏幕暗到像宇宙深处，成功多撑十分钟。",{mood:2,luck:4,crazy:4}),
+            makeScene("x8",{type:"park",time:"night"},"你被邀请参加广场舞，地面似乎拥有集体意识。","加入队形","动作不标准，但大家夸你有星际风。",{mood:12,luck:8,crazy:13},"旁边记录","你写下：地球人用同步移动维护邻里关系。",{mood:6,luck:5,crazy:5})
+          ]
+        };
 
-  // ====== 工具 ======
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const el = (tag, attrs={}, ...children) => {
-    const node = document.createElement(tag);
-    for (const k in attrs) {
-      if (k === "class") node.className = attrs[k];
-      else if (k === "style") node.setAttribute("style", attrs[k]);
-      else if (k.startsWith("on") && typeof attrs[k] === "function") node.addEventListener(k.slice(2), attrs[k]);
-      else if (attrs[k] != null) node.setAttribute(k, attrs[k]);
-    }
-    for (const c of children) {
-      if (c == null || c === false) continue;
-      node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
-    }
-    return node;
-  };
-  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-  const shuffle = arr => {
-    const a = arr.slice();
-    for (let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  };
+        const ENDINGS = [
+          { id: "balanced", title: "四项全能的岔路口冠军", desc: "你在心态、钱包、运气和离谱值之间走出奇妙平衡。人生没有标准答案，但你这份挺能发朋友圈。", test: s => s.mood >= 60 && s.money >= 50 && s.luck >= 60 && s.crazy >= 50 },
+          { id: "crazy", title: "离谱值超标观察对象", desc: "你的人生报告被标注为请勿用常识解释。大家围着你研究，最后决定先请你吃饭。", test: s => s.crazy >= 88 },
+          { id: "lucky", title: "全靠玄学活下来的幸运体质", desc: "每次局面快要散架，事情都会以奇怪方式自己复位。你没有解决命运，命运选择不为难你。", test: s => s.luck >= 82 },
+          { id: "moneyLow", title: "余额三块但精神富翁", desc: "你没攒下多少钱，却攒下大量离谱经历。朋友问你怎么撑过来，你说主要靠心态和热水。", test: s => s.money <= 12 && s.mood >= 55 },
+          { id: "moodLow", title: "心态归零但流程完整", desc: "你一度只剩躯壳在点击选项，但仍然完成六步。命运给你颁发了坚持参与奖。", test: s => s.mood <= 12 },
+          { id: "social", title: "社交分享型人生样本", desc: "你的经历短、密、好转述，像一条会自己配字幕的人生短片。朋友听完只想问：还有吗？", test: s => s.mood >= 70 && s.crazy >= 60 },
+          { id: "moneyHero", title: "钱包安静离场的人", desc: "你的钱包像参加静默修行，存在感很低，但你把每一分钱都花出了剧情转折。", test: s => s.money <= 8 },
+          { id: "luckLow", title: "运气离线的认真选手", desc: "你每次都认真判断，命运每次都轻轻绕开。好消息是，你的经验值涨得非常扎实。", test: s => s.luck <= 12 },
+          { id: "moodHigh", title: "情绪稳定的反转大师", desc: "无论世界怎样突然改题，你都像自带缓冲垫。别人看热闹，你看见人生素材。", test: s => s.mood >= 82 },
+          { id: "lowCrazy", title: "低调但很会活的普通英雄", desc: "你没有把人生开成奇幻片，却稳稳完成了六次选择。平凡在你手里也挺有镜头感。", test: s => s.crazy <= 30 && s.mood >= 60 },
+          { id: "randomPlay", title: "被概率偏爱的小跑偏", desc: "你一路像被随机按钮轻轻推着走，竟然推到了一个还能自拍纪念的地方。", test: s => s.luck >= 55 && s.crazy >= 55 },
+          { id: "collapseGlow", title: "一边崩坏一边发光", desc: "某项属性已经亮起红灯，但你没有退场。你把崩坏处理成了个人风格。", test: s => s.mood <= 25 || s.money <= 20 || s.luck <= 20 },
+          { id: "rich", title: "存款增长的清醒派", desc: "别人收获故事，你还顺手保住了钱包。命运看了你的账本，决定尊重你的预算。", test: s => s.money >= 72 },
+          { id: "patch", title: "正常世界的异常补丁", desc: "你不像主角，更像世界偷偷安装的补丁。哪里不合理，你就在那里显得更合理。", test: s => s.crazy >= 72 && s.mood >= 45 },
+          { id: "plain", title: "被生活随机播放的人", desc: "你的六次选择像歌单随机播放，上一秒励志，下一秒跑偏。可你居然把节奏踩住了。", test: _ => true }
+        ];
 
-  // ====== 状态 ======
-  const state = {
-    view: "start",      // start | role | play | ending
-    role: null,
-    stats: {mood:50,money:50,luck:50,crazy:50},
-    step: 0,
-    eventQueue: [],
-    history: [],
-    ending: null
-  };
+        const rand = (a, b) => a + Math.random() * (b - a);
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        const shuffle = items => {
+          const out = items.slice();
+          for (let i = out.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [out[i], out[j]] = [out[j], out[i]];
+          }
+          return out;
+        };
 
-  const app = $("#app");
-  let typingTimer = null;
-  let onSkipType = null;
+        const safe = { t: 0, r: 0, b: 0, l: 0 };
+        const readSafe = () => {
+          const cs = getComputedStyle(document.documentElement);
+          const px = k => parseFloat(cs.getPropertyValue(k)) || 0;
+          safe.t = px("--sat");
+          safe.r = px("--sar");
+          safe.b = px("--sab");
+          safe.l = px("--sal");
+        };
 
-  // ====== 本地存档（localStorage 可能不可用，做兜底） ======
-  const store = (() => {
-    const mem = {};
-    let ok = false;
-    try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); ok = true; } catch(e){}
-    return {
-      get(k){ try { return ok ? localStorage.getItem(k) : mem[k]; } catch(e){ return mem[k]; } },
-      set(k,v){ try { if (ok) localStorage.setItem(k,v); else mem[k]=v; } catch(e){ mem[k]=v; } }
-    };
-  })();
-  const SEEN_KEY = "lcr.seen";
-  const UNLOCKED_KEY = "lcr.endings";
-  function getUnlocked(){
-    try { return JSON.parse(store.get(UNLOCKED_KEY) || "[]"); } catch(e){ return []; }
-  }
-  function addUnlocked(rawTitle){
-    const list = getUnlocked();
-    if (list.includes(rawTitle)) return false;
-    list.push(rawTitle);
-    store.set(UNLOCKED_KEY, JSON.stringify(list));
-    return true;
-  }
+        let dpr = Math.min(2, window.devicePixelRatio || 1);
+        let viewW = 0;
+        let viewH = 0;
+        let scale = 1;
+        let ox = 0;
+        let oy = 0;
 
-  // ====== 持久化的 stat 节点（避免重建丢失动画） ======
-  // 每个 view 自己造，这里就不缓存了
+        const noise = document.createElement("canvas");
+        const nctx = noise.getContext("2d");
+        const makeNoise = () => {
+          noise.width = 220;
+          noise.height = 220;
+          const img = nctx.createImageData(noise.width, noise.height);
+          for (let i = 0; i < img.data.length; i += 4) {
+            const v = (Math.random() * 255) | 0;
+            img.data[i] = v;
+            img.data[i + 1] = v;
+            img.data[i + 2] = v;
+            img.data[i + 3] = 18;
+          }
+          nctx.putImageData(img, 0, 0);
+        };
 
-  // ====== 视图 ======
-  function mount(node){
-    app.replaceChildren(node);
-  }
+        const shadow = (blur, alpha) => {
+          ctx.shadowColor = `rgba(12, 16, 30, ${alpha})`;
+          ctx.shadowBlur = blur;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = Math.max(2, Math.round(blur * 0.25));
+        };
+        const clearShadow = () => {
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        };
 
-  function viewStart(){
-    const unlocked = getUnlocked().length;
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"}, el("span",{},"AI 平行人生生成器"), el("span",{}, unlocked ? `已解锁 ${unlocked} / ${ENDINGS.length} 种结局` : "")),
-      el("h1",{},"《一分钟人生岔路口》"),
-      el("p",{class:"subtitle"},"6 次选择，生成你的一分钟平行人生。随机身份、随机事件、随机地把生活过成段子。"),
-      el("button",{onclick:()=> store.get(SEEN_KEY) ? startRoll() : viewHow() }, "开始人生"),
-      store.get(SEEN_KEY) ? el("button",{class:"ghost", onclick:viewHow},"怎么玩") : null,
-      el("p",{class:"meta"}, "故事打字过程中可点击文字直接跳过")
-    );
-    mount(card);
-  }
+        const roundRect = (x, y, w, h, r) => {
+          const rr = Math.min(r, w * 0.5, h * 0.5);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+        };
 
-  function viewHow(){
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"}, el("span",{},"怎么玩"), el("span",{},"约 1 分钟")),
-      el("h2",{},"三件事就够了"),
-      el("div",{class:"rules"},
-        el("div",{class:"item"}, el("b",{},"① 抽身份"), el("span",{},"系统随机给你一个身份：大学生、社畜、创业者、猫、外星人。")),
-        el("div",{class:"item"}, el("b",{},"② 做 6 次选择"), el("span",{},"每个岔路口两个选项，没有对错。选择会改变你的 4 项属性。")),
-        el("div",{class:"item"}, el("b",{},"③ 看结局"), el("span",{},"最终属性的组合会决定一个荒诞结局。共有 "+ENDINGS.length+" 种，每次都可能不同。"))
-      ),
-      el("div",{class:"rules"},
-        el("div",{class:"item"}, el("b",{},"心态"), el("span",{},"你今天的精神状态。")),
-        el("div",{class:"item"}, el("b",{},"钱包"), el("span",{},"你身上的钱，归零也能继续。")),
-        el("div",{class:"item"}, el("b",{},"运气"), el("span",{},"事情会不会突然朝奇怪方向反转。")),
-        el("div",{class:"item"}, el("b",{},"离谱值"), el("span",{},"故事的荒诞程度，越高越魔幻，没有好坏。"))
-      ),
-      el("button",{onclick:()=>{ store.set(SEEN_KEY,"1"); startRoll(); }}, "我懂了，开始抽签"),
-      el("button",{class:"ghost", onclick:viewStart}, "返回")
-    );
-    mount(card);
-  }
+        const splitText = (text, maxW, font) => {
+          ctx.save();
+          ctx.font = font;
+          const words = text.split("");
+          const lines = [];
+          let line = "";
+          for (let i = 0; i < words.length; i++) {
+            const next = line + words[i];
+            const w = ctx.measureText(next).width;
+            if (w > maxW && line) {
+              lines.push(line);
+              line = words[i];
+            } else {
+              line = next;
+            }
+          }
+          if (line) lines.push(line);
+          ctx.restore();
+          return lines;
+        };
 
-  // 抽签动画
-  function startRoll(){
-    state.view = "role";
-    const names = shuffle(ROLES.map(r=>r.name));
-    // 最终落点
-    const finalRole = pick(ROLES);
-    state.role = finalRole;
+        const btns = [];
+        const hitTest = (x, y) => {
+          for (let i = btns.length - 1; i >= 0; i--) {
+            const b = btns[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b;
+          }
+          return null;
+        };
 
-    const track = el("div",{class:"track"});
-    // 构造一个长滚动序列，末尾是 finalRole
-    const reelItems = [];
-    for (let i=0;i<10;i++) reelItems.push(pick(names));
-    reelItems.push(finalRole.name);
-    reelItems.forEach(n => track.appendChild(el("div",{},n)));
+        const audio = { ctx: null, master: null };
+        const ensureAudio = () => {
+          if (audio.ctx) return;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          audio.ctx = new AC();
+          audio.master = audio.ctx.createGain();
+          audio.master.gain.value = 0.08;
+          audio.master.connect(audio.ctx.destination);
+        };
+        const beep = (freq, dur, type) => {
+          if (!audio.ctx || !audio.master) return;
+          const t0 = audio.ctx.currentTime;
+          const o = audio.ctx.createOscillator();
+          const g = audio.ctx.createGain();
+          o.type = type || "sine";
+          o.frequency.setValueAtTime(freq, t0);
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          o.connect(g);
+          g.connect(audio.master);
+          o.start(t0);
+          o.stop(t0 + dur + 0.02);
+        };
 
-    const reel = el("div",{class:"reel"}, track);
+        const nowMs = () => performance.now();
 
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"}, el("span",{},"命运抽签中…"), el("span",{},"")),
-      reel,
-      el("p",{class:"subtitle",id:"rollDesc"},"正在为你抽取今天的身份。"),
-      el("button",{disabled:"",id:"enterBtn"},"进入人生")
-    );
-    mount(card);
+        const store = {
+          bestScore: 0,
+          bestTitle: "",
+          bestAt: 0
+        };
+        const loadStore = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.bestScore === "number") store.bestScore = parsed.bestScore;
+            if (parsed && typeof parsed.bestTitle === "string") store.bestTitle = parsed.bestTitle;
+            if (parsed && typeof parsed.bestAt === "number") store.bestAt = parsed.bestAt;
+          } catch (_) {}
+        };
+        const saveStore = () => {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          } catch (_) {}
+        };
 
-    // 触发滚动动画
-    requestAnimationFrame(()=>{
-      const target = (reelItems.length-1) * 42;
-      track.style.transform = `translateY(-${target}px)`;
-    });
+        const state = {
+          view: "start",
+          role: null,
+          step: 0,
+          steps: [],
+          stats: { mood: 50, money: 50, luck: 50, crazy: 50 },
+          history: [],
+          toast: "",
+          toastAt: 0,
+          animAt: 0,
+          sparkles: [],
+          ending: null,
+          share: "",
+          locked: false,
+          pendingResult: null
+        };
 
-    setTimeout(()=>{
-      // 落定后：把 stats 装上，desc 替换
-      finalizeRoll(finalRole);
-    }, 600);
-  }
+        const freshRun = () => {
+          const role = pick(ROLES);
+          const pool = shuffle(EVENTS[role.id]).slice(0, TOTAL_STEPS);
+          state.view = "play";
+          state.role = role;
+          state.step = 0;
+          state.steps = pool;
+          state.stats = { ...role.base };
+          state.history = [];
+          state.toast = "";
+          state.toastAt = 0;
+          state.animAt = nowMs();
+          state.ending = null;
+          state.share = "";
+          state.locked = false;
+          state.pendingResult = null;
+        };
 
-  function finalizeRoll(role){
-    state.stats = {...role.stats};
-    state.step = 0;
-    state.eventQueue = shuffle(EVENTS[role.id]).slice(0, TOTAL_STEPS);
-    state.history = [];
+        const addSpark = (x, y, n) => {
+          for (let i = 0; i < n; i++) {
+            state.sparkles.push({
+              x,
+              y,
+              vx: rand(-0.7, 0.7),
+              vy: rand(-1.6, -0.3),
+              r: rand(1.2, 3.6),
+              life: rand(420, 780),
+              born: nowMs(),
+              hue: rand(28, 190)
+            });
+          }
+        };
 
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"}, el("span",{},"命运抽签完成"), el("span",{},"")),
-      el("div",{class:"role-box"},
-        el("div",{class:"role-name"}, role.name),
-        el("p",{class:"subtitle"}, role.desc)
-      ),
-      el("p",{class:"stat-hint"},"下方是你的起始属性，每次选择都会让它们上下变化（0–100）。"),
-      statsBlock(state.stats),
-      el("button",{onclick:enterPlay},"进入人生"),
-      el("button",{class:"ghost",onclick:startRoll},"换个身份")
-    );
-    mount(card);
-  }
+        const applyDelta = delta => {
+          for (const item of STATS) {
+            const k = item.key;
+            const v = typeof delta[k] === "number" ? delta[k] : 0;
+            state.stats[k] = clamp(state.stats[k] + v, 0, 100);
+          }
+        };
 
-  function statsBlock(stats){
-    const wrap = el("div",{class:"stats"});
-    STAT_KEYS.forEach(k=>{
-      const value = stats[k];
-      wrap.appendChild(
-        el("div",{class:"stat","data-stat":k},
-          el("div",{class:"stat-head"},
-            el("span",{},STAT_LABELS[k]),
-            el("strong",{class:"val"}, String(value))
-          ),
-          el("div",{class:"bar"}, el("span",{style:`width:${value}%`})),
-          el("div",{class:"delta"})
-        )
-      );
-    });
-    return wrap;
-  }
+        const choose = idx => {
+          if (state.locked) return;
+          const scene = state.steps[state.step];
+          const choice = scene.choices[idx];
+          state.locked = true;
+          ensureAudio();
+          if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
+          beep(idx === 0 ? 520 : 430, 0.09, "triangle");
+          applyDelta(choice.delta || {});
+          state.history.push({ sceneId: scene.id, text: scene.text, choice: choice.text, result: choice.result });
+          state.pendingResult = choice.result;
+          state.toast = choice.result;
+          state.toastAt = nowMs();
+          state.animAt = nowMs();
+          addSpark(LOGICAL_W * 0.5, LOGICAL_H * 0.78, 22);
+        };
 
-  function updateStatsDOM(root, oldStats, newStats){
-    STAT_KEYS.forEach(k=>{
-      const stat = root.querySelector(`.stat[data-stat="${k}"]`);
-      if (!stat) return;
-      const val = stat.querySelector(".val");
-      const bar = stat.querySelector(".bar > span");
-      const delta = stat.querySelector(".delta");
-      const diff = newStats[k] - oldStats[k];
-      val.textContent = String(newStats[k]);
-      bar.style.width = newStats[k] + "%";
-      if (diff !== 0){
-        delta.className = "delta " + (diff>0?"up":"down");
-        delta.textContent = (diff>0?"+":"") + diff;
-        // 重启动画
-        delta.classList.remove("show");
-        void delta.offsetWidth;
-        delta.classList.add("show");
-      }
-    });
-  }
-
-  function enterPlay(){
-    state.view = "play";
-    state.step = 1;
-    renderPlay();
-  }
-
-  function renderPlay(){
-    const ev = state.eventQueue[state.step-1];
-    const dots = el("div",{class:"dots"});
-    for (let i=1;i<=TOTAL_STEPS;i++){
-      const cls = i < state.step ? "done" : (i === state.step ? "now" : "");
-      dots.appendChild(el("i",{class:cls}));
-    }
-
-    const stats = statsBlock(state.stats);
-    const story = el("div",{class:"story typing"},
-      el("span",{class:"text"}),
-      el("span",{class:"caret"}),
-      el("span",{class:"hint"},"点击跳过")
-    );
-
-    const choices = el("div",{class:"choices"});
-    ev.choices.forEach((c,i)=>{
-      const btn = el("button",{
-        class: i===1 ? "secondary" : "",
-        disabled: "",
-        onclick: () => onChoose(c, stats, story, choices, ev)
-      }, c.text);
-      choices.appendChild(btn);
-    });
-
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"},
-        el("span",{}, `第 ${state.step} / ${TOTAL_STEPS} 步`),
-        el("span",{}, `身份：${state.role.name}`)
-      ),
-      dots,
-      stats,
-      story,
-      choices
-    );
-    mount(card);
-
-    typeText(story, storyWithBridge(ev.story), () => {
-      choices.querySelectorAll("button").forEach(b => b.disabled = false);
-    });
-  }
-
-  function storyWithBridge(text){
-    if (!state.history.length) return text;
-    const last = state.history[state.history.length - 1];
-    return `上一幕：${last.result}\n\n${text}`;
-  }
-
-  function typeText(storyNode, text, done){
-    const target = storyNode.querySelector(".text");
-    const caret = storyNode.querySelector(".caret");
-    target.textContent = "";
-    let i = 0;
-    if (typingTimer) clearInterval(typingTimer);
-    const finish = () => {
-      if (typingTimer){ clearInterval(typingTimer); typingTimer = null; }
-      target.textContent = text;
-      caret.style.display = "none";
-      storyNode.classList.remove("typing");
-      storyNode.onclick = null;
-      onSkipType = null;
-      done && done();
-    };
-    onSkipType = finish;
-    storyNode.onclick = () => onSkipType && onSkipType();
-    typingTimer = setInterval(()=>{
-      target.textContent += text[i] || "";
-      i += 1;
-      if (i >= text.length) finish();
-    }, 22);
-  }
-
-  function onChoose(choice, statsNode, storyNode, choicesNode, ev){
-    // 二次保护
-    if (choicesNode.dataset.locked) return;
-    choicesNode.dataset.locked = "1";
-    choicesNode.querySelectorAll("button").forEach(b => b.disabled = true);
-
-    const oldStats = {...state.stats};
-    const newStats = {...state.stats};
-    STAT_KEYS.forEach(k => newStats[k] = clamp(newStats[k] + (choice.effects[k]||0), 0, 100));
-    state.stats = newStats;
-    state.history.push({ step: state.step, story: ev.story, choice: choice.text, result: choice.result, effects: choice.effects });
-
-    updateStatsDOM(statsNode, oldStats, newStats);
-
-    // 结果框 + 继续按钮（不再自动跳）
-    const result = el("div",{class:"result"},
-      el("b",{},"这一选择带来的结果"),
-      el("p",{}, choice.result)
-    );
-    storyNode.after(result);
-
-    const isLast = state.step >= TOTAL_STEPS;
-    const nextBtn = el("button",{
-      style:"margin-top:4px",
-      onclick: () => {
-        if (isLast) {
-          finishGame();
-        } else {
+        const continueAfterResult = () => {
+          if (!state.pendingResult) return;
+          state.pendingResult = null;
+          state.toast = "";
+          if (state.step >= TOTAL_STEPS - 1) {
+            finish();
+            return;
+          }
           state.step += 1;
-          renderPlay();
+          state.locked = false;
+          state.animAt = nowMs();
+        };
+
+        const scoreNow = () => {
+          return Math.round((state.stats.mood * 1.1 + state.stats.money * 0.8 + state.stats.luck * 1.1 + state.stats.crazy * 0.7) / 4 * 100);
+        };
+
+        const finish = () => {
+          const s = state.stats;
+          const ending = ENDINGS.find(e => e.test(s)) || ENDINGS[ENDINGS.length - 1];
+          state.ending = ending;
+          state.view = "ending";
+          state.animAt = nowMs();
+          const sc = scoreNow();
+          const sum = `心态${s.mood} / 钱包${s.money} / 运气${s.luck} / 离谱值${s.crazy}`;
+          state.share = `我在《一分钟人生岔路口》里活成了：${ending.title}（${sum}）`;
+          if (sc > store.bestScore) {
+            store.bestScore = sc;
+            store.bestTitle = ending.title;
+            store.bestAt = Date.now();
+            saveStore();
+          }
+          ensureAudio();
+          beep(640, 0.11, "sine");
+          window.setTimeout(() => beep(820, 0.09, "sine"), 90);
+          window.setTimeout(() => beep(1040, 0.08, "sine"), 170);
+        };
+
+        const copyShare = () => {
+          ensureAudio();
+          beep(720, 0.06, "square");
+          const text = state.share || "";
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+              state.toast = "分享文案已复制。";
+              state.toastAt = nowMs();
+            }).catch(() => {
+              state.toast = "复制失败了，你可以长按截图分享。";
+              state.toastAt = nowMs();
+            });
+          } else {
+            state.toast = "你的浏览器不支持一键复制，可以长按截图分享。";
+            state.toastAt = nowMs();
+          }
+        };
+
+        const styleText = (size, weight) => {
+          const w = weight ? `${weight} ` : "";
+          return `${w}${size}px "PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei",sans-serif`;
+        };
+
+        const toLogical = (px, py) => {
+          const x = (px * dpr - ox) / scale;
+          const y = (py * dpr - oy) / scale;
+          return { x, y };
+        };
+
+        const resize = () => {
+          readSafe();
+          dpr = Math.min(2, window.devicePixelRatio || 1);
+          const rect = wrap.getBoundingClientRect();
+          viewW = Math.max(1, Math.floor(rect.width));
+          viewH = Math.max(1, Math.floor(rect.height));
+          canvas.width = Math.floor(viewW * dpr);
+          canvas.height = Math.floor(viewH * dpr);
+          const s = Math.min(canvas.width / LOGICAL_W, canvas.height / LOGICAL_H);
+          scale = s;
+          ox = Math.floor((canvas.width - LOGICAL_W * scale) * 0.5);
+          oy = Math.floor((canvas.height - LOGICAL_H * scale) * 0.5);
+          ctx.imageSmoothingEnabled = true;
+          ctx.textBaseline = "alphabetic";
+        };
+
+        const bgGrad = (spec, t) => {
+          const g = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+          const tw = (spec.time || "day");
+          if (tw === "morning") {
+            g.addColorStop(0, "#fff1c9");
+            g.addColorStop(0.45, "#c8f3ff");
+            g.addColorStop(1, "#fff6ef");
+          } else if (tw === "sunset") {
+            g.addColorStop(0, "#ffd1dc");
+            g.addColorStop(0.55, "#bde0fe");
+            g.addColorStop(1, "#f7f0ff");
+          } else if (tw === "evening") {
+            g.addColorStop(0, "#bde0fe");
+            g.addColorStop(0.55, "#ffd6a5");
+            g.addColorStop(1, "#f9f6ff");
+          } else if (tw === "night") {
+            g.addColorStop(0, "#0b1020");
+            g.addColorStop(0.55, "#17214b");
+            g.addColorStop(1, "#07111f");
+          } else {
+            g.addColorStop(0, "#f7f0ff");
+            g.addColorStop(0.48, "#dff9fb");
+            g.addColorStop(1, "#fff6e8");
+          }
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+          const pulse = 0.6 + 0.4 * Math.sin(t * 0.00075);
+          ctx.globalAlpha = 0.52;
+          const g2 = ctx.createRadialGradient(LOGICAL_W * 0.22, LOGICAL_H * 0.2, 0, LOGICAL_W * 0.22, LOGICAL_H * 0.2, LOGICAL_W * 0.55);
+          g2.addColorStop(0, `rgba(255, 209, 102, ${0.48 * pulse})`);
+          g2.addColorStop(1, "rgba(255, 209, 102, 0)");
+          ctx.fillStyle = g2;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+          const g3 = ctx.createRadialGradient(LOGICAL_W * 0.84, LOGICAL_H * 0.18, 0, LOGICAL_W * 0.84, LOGICAL_H * 0.18, LOGICAL_W * 0.6);
+          g3.addColorStop(0, `rgba(79, 209, 197, ${0.38 * pulse})`);
+          g3.addColorStop(1, "rgba(79, 209, 197, 0)");
+          ctx.fillStyle = g3;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.globalAlpha = 1;
+        };
+
+        const drawCloud = (x, y, s, alpha) => {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = "rgba(255,255,255,.92)";
+          ctx.beginPath();
+          ctx.ellipse(x, y, 38 * s, 26 * s, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + 36 * s, y - 10 * s, 34 * s, 24 * s, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + 70 * s, y, 42 * s, 28 * s, 0, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        };
+
+        const sceneDecor = (spec, t) => {
+          const type = spec.type || "city";
+          const tt = (t * 0.00007) % 1;
+          if (type === "room" || type === "home") {
+            ctx.save();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "rgba(18,24,38,.06)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.12);
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.64, LOGICAL_W * 0.84, LOGICAL_H * 0.3, 26);
+            ctx.fillStyle = "rgba(255,255,255,.65)";
+            ctx.fill();
+            clearShadow();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "rgba(255, 255, 255, .55)";
+            roundRect(LOGICAL_W * 0.12, LOGICAL_H * 0.69, LOGICAL_W * 0.22, LOGICAL_H * 0.12, 20);
+            ctx.fill();
+            ctx.fillStyle = "rgba(255, 214, 165, .55)";
+            roundRect(LOGICAL_W * 0.38, LOGICAL_H * 0.68, LOGICAL_W * 0.5, LOGICAL_H * 0.16, 22);
+            ctx.fill();
+            ctx.fillStyle = "rgba(82, 209, 196, .35)";
+            roundRect(LOGICAL_W * 0.14, LOGICAL_H * 0.84, LOGICAL_W * 0.72, LOGICAL_H * 0.08, 999);
+            ctx.fill();
+            ctx.restore();
+          } else if (type === "park") {
+            ctx.save();
+            ctx.fillStyle = "rgba(16, 170, 120, .16)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.5, LOGICAL_H * 0.86, LOGICAL_W * 0.62, LOGICAL_H * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(16, 170, 120, .26)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.24, LOGICAL_H * 0.9, LOGICAL_W * 0.3, LOGICAL_H * 0.13, 0, 0, Math.PI * 2);
+            ctx.ellipse(LOGICAL_W * 0.78, LOGICAL_H * 0.9, LOGICAL_W * 0.35, LOGICAL_H * 0.14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            shadow(12, 0.1);
+            ctx.fillStyle = "rgba(255,255,255,.74)";
+            roundRect(LOGICAL_W * 0.58, LOGICAL_H * 0.66, LOGICAL_W * 0.28, LOGICAL_H * 0.1, 18);
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(255, 214, 165, .55)";
+            roundRect(LOGICAL_W * 0.6, LOGICAL_H * 0.7, LOGICAL_W * 0.24, LOGICAL_H * 0.02, 999);
+            ctx.fill();
+            drawCloud(LOGICAL_W * (0.2 + 0.22 * tt), LOGICAL_H * 0.18, 1.05, 0.8);
+            drawCloud(LOGICAL_W * (0.62 - 0.22 * tt), LOGICAL_H * 0.24, 0.9, 0.7);
+            ctx.restore();
+          } else if (type === "cafe" || type === "nightMarket") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18, 24, 38, .08)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.14);
+            roundRect(LOGICAL_W * 0.06, LOGICAL_H * 0.66, LOGICAL_W * 0.88, LOGICAL_H * 0.26, 26);
+            ctx.fillStyle = "rgba(255,255,255,.62)";
+            ctx.fill();
+            clearShadow();
+            const bulbs = 10;
+            for (let i = 0; i < bulbs; i++) {
+              const x = LOGICAL_W * 0.12 + i * (LOGICAL_W * 0.76 / (bulbs - 1));
+              const y = LOGICAL_H * 0.16 + 10 * Math.sin(t * 0.002 + i);
+              ctx.fillStyle = `hsla(${38 + i * 12}, 95%, 70%, .9)`;
+              ctx.beginPath();
+              ctx.arc(x, y, 7, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+          } else if (type === "office") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18,24,38,.08)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.16);
+            roundRect(LOGICAL_W * 0.09, LOGICAL_H * 0.66, LOGICAL_W * 0.82, LOGICAL_H * 0.22, 26);
+            ctx.fillStyle = "rgba(255,255,255,.64)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(77, 132, 255, .18)";
+            roundRect(LOGICAL_W * 0.15, LOGICAL_H * 0.69, LOGICAL_W * 0.42, LOGICAL_H * 0.12, 20);
+            ctx.fill();
+            ctx.fillStyle = "rgba(255, 209, 102, .2)";
+            roundRect(LOGICAL_W * 0.6, LOGICAL_H * 0.7, LOGICAL_W * 0.18, LOGICAL_H * 0.1, 18);
+            ctx.fill();
+            ctx.restore();
+          } else if (type === "library") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18,24,38,.06)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.12);
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.66, LOGICAL_W * 0.84, LOGICAL_H * 0.26, 26);
+            ctx.fillStyle = "rgba(255,255,255,.66)";
+            ctx.fill();
+            clearShadow();
+            for (let i = 0; i < 6; i++) {
+              ctx.fillStyle = `rgba(${60 + i * 18}, ${90 + i * 14}, ${130 + i * 9}, .18)`;
+              roundRect(LOGICAL_W * (0.12 + i * 0.12), LOGICAL_H * 0.69, LOGICAL_W * 0.09, LOGICAL_H * 0.18, 16);
+              ctx.fill();
+            }
+            ctx.restore();
+          } else if (type === "roof") {
+            ctx.save();
+            ctx.fillStyle = "rgba(255,255,255,.08)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.5, LOGICAL_H * 0.78, LOGICAL_W * 0.72, LOGICAL_H * 0.24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            for (let i = 0; i < 22; i++) {
+              const x = (i / 21) * LOGICAL_W;
+              const y = LOGICAL_H * 0.58 + 10 * Math.sin(i * 1.3 + t * 0.002);
+              ctx.fillStyle = `rgba(255, 209, 102, ${0.08 + 0.04 * Math.sin(i + t * 0.003)})`;
+              ctx.fillRect(x, y, 18, 160);
+            }
+            ctx.restore();
+          } else {
+            ctx.save();
+            drawCloud(LOGICAL_W * (0.24 + 0.2 * tt), LOGICAL_H * 0.18, 1.05, 0.78);
+            drawCloud(LOGICAL_W * (0.68 - 0.2 * tt), LOGICAL_H * 0.26, 0.92, 0.7);
+            ctx.fillStyle = "rgba(18,24,38,.05)";
+            ctx.fillRect(0, LOGICAL_H * 0.66, LOGICAL_W, LOGICAL_H * 0.34);
+            shadow(14, 0.1);
+            ctx.fillStyle = "rgba(255,255,255,.7)";
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.69, LOGICAL_W * 0.2, LOGICAL_H * 0.18, 22);
+            ctx.fill();
+            roundRect(LOGICAL_W * 0.32, LOGICAL_H * 0.68, LOGICAL_W * 0.22, LOGICAL_H * 0.2, 22);
+            ctx.fill();
+            roundRect(LOGICAL_W * 0.58, LOGICAL_H * 0.7, LOGICAL_W * 0.28, LOGICAL_H * 0.16, 22);
+            ctx.fill();
+            clearShadow();
+            ctx.restore();
+          }
+        };
+
+        const portraitCache = new Map();
+        const portraitKey = role => `${role.id}`;
+
+        const drawPortraitTo = (role, size) => {
+          const c = document.createElement("canvas");
+          c.width = size;
+          c.height = size;
+          const g = c.getContext("2d");
+          const rr = (x, y, w, h, r) => {
+            const rad = Math.min(r, w * 0.5, h * 0.5);
+            g.beginPath();
+            g.moveTo(x + rad, y);
+            g.arcTo(x + w, y, x + w, y + h, rad);
+            g.arcTo(x + w, y + h, x, y + h, rad);
+            g.arcTo(x, y + h, x, y, rad);
+            g.arcTo(x, y, x + w, y, rad);
+            g.closePath();
+          };
+          const p = role.palette;
+          const cx = size * 0.5;
+          const cy = size * 0.52;
+          const headR = size * 0.34;
+          const bg = g.createLinearGradient(0, 0, size, size);
+          bg.addColorStop(0, p.b);
+          bg.addColorStop(1, p.a);
+          g.fillStyle = bg;
+          g.fillRect(0, 0, size, size);
+          g.fillStyle = "rgba(255,255,255,.2)";
+          g.beginPath();
+          g.ellipse(size * 0.75, size * 0.28, size * 0.28, size * 0.2, -0.4, 0, Math.PI * 2);
+          g.fill();
+
+          g.save();
+          g.shadowColor = "rgba(0,0,0,.18)";
+          g.shadowBlur = size * 0.08;
+          g.shadowOffsetY = size * 0.05;
+          g.fillStyle = "rgba(255,255,255,.64)";
+          g.beginPath();
+          g.arc(cx, cy, headR * 1.12, 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+
+          g.fillStyle = p.skin;
+          g.beginPath();
+          g.arc(cx, cy, headR, 0, Math.PI * 2);
+          g.fill();
+
+          const hair = role.portrait.hair;
+          g.fillStyle = p.hair;
+          g.beginPath();
+          if (hair === "short") {
+            g.arc(cx, cy - headR * 0.22, headR * 1.02, Math.PI * 1.05, Math.PI * 1.95);
+          } else if (hair === "side") {
+            g.ellipse(cx - headR * 0.18, cy - headR * 0.34, headR * 1.06, headR * 0.86, -0.25, Math.PI, Math.PI * 2);
+          } else if (hair === "bun") {
+            g.arc(cx, cy - headR * 0.38, headR * 1.0, Math.PI, Math.PI * 2);
+            g.moveTo(cx, cy - headR * 1.06);
+            g.arc(cx, cy - headR * 1.06, headR * 0.34, 0, Math.PI * 2);
+          } else if (hair === "wave") {
+            g.arc(cx, cy - headR * 0.22, headR * 1.04, Math.PI * 1.05, Math.PI * 1.95);
+            g.ellipse(cx - headR * 0.48, cy + headR * 0.05, headR * 0.2, headR * 0.64, 0.1, 0, Math.PI * 2);
+            g.ellipse(cx + headR * 0.48, cy + headR * 0.05, headR * 0.2, headR * 0.64, -0.1, 0, Math.PI * 2);
+          } else if (hair === "cap") {
+            g.arc(cx, cy - headR * 0.42, headR * 1.0, Math.PI, 0);
+            g.rect(cx - headR * 1.0, cy - headR * 0.42, headR * 2.0, headR * 0.46);
+          } else {
+            g.arc(cx, cy - headR * 0.28, headR * 1.02, Math.PI * 1.04, Math.PI * 1.96);
+          }
+          g.closePath();
+          g.fill();
+
+          const eyeY = cy - headR * 0.02;
+          const eyeX = headR * 0.42;
+          g.fillStyle = "rgba(18,24,38,.9)";
+          g.beginPath();
+          g.ellipse(cx - eyeX, eyeY, headR * 0.12, headR * 0.16, 0, 0, Math.PI * 2);
+          g.ellipse(cx + eyeX, eyeY, headR * 0.12, headR * 0.16, 0, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = "rgba(255,255,255,.85)";
+          g.beginPath();
+          g.arc(cx - eyeX + headR * 0.05, eyeY - headR * 0.05, headR * 0.05, 0, Math.PI * 2);
+          g.arc(cx + eyeX + headR * 0.05, eyeY - headR * 0.05, headR * 0.05, 0, Math.PI * 2);
+          g.fill();
+
+          g.strokeStyle = "rgba(18,24,38,.7)";
+          g.lineWidth = Math.max(2, size * 0.015);
+          g.lineCap = "round";
+          g.beginPath();
+          g.moveTo(cx - headR * 0.16, cy + headR * 0.32);
+          g.quadraticCurveTo(cx, cy + headR * 0.4, cx + headR * 0.16, cy + headR * 0.32);
+          g.stroke();
+
+          const acc = role.portrait.acc;
+          if (acc === "book") {
+            g.save();
+            g.translate(cx + headR * 0.62, cy + headR * 0.5);
+            g.rotate(-0.18);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.fillRect(-size * 0.16, -size * 0.08, size * 0.28, size * 0.18);
+            g.fillStyle = "rgba(18,24,38,.18)";
+            g.fillRect(-size * 0.12, -size * 0.04, size * 0.2, size * 0.02);
+            g.restore();
+          } else if (acc === "tie") {
+            g.save();
+            g.translate(cx, cy + headR * 0.9);
+            g.fillStyle = "rgba(6, 214, 160, .9)";
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.lineTo(-headR * 0.18, headR * 0.3);
+            g.lineTo(0, headR * 0.48);
+            g.lineTo(headR * 0.18, headR * 0.3);
+            g.closePath();
+            g.fill();
+            g.restore();
+          } else if (acc === "laptop") {
+            g.save();
+            g.translate(cx - headR * 0.9, cy + headR * 0.75);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            rr(0, 0, headR * 0.9, headR * 0.56, headR * 0.12);
+            g.fill();
+            g.fillStyle = "rgba(18,24,38,.16)";
+            rr(headR * 0.08, headR * 0.08, headR * 0.74, headR * 0.32, headR * 0.08);
+            g.fill();
+            g.restore();
+          } else if (acc === "paw") {
+            g.save();
+            g.translate(cx + headR * 0.72, cy + headR * 0.52);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.beginPath();
+            g.arc(0, 0, headR * 0.22, 0, Math.PI * 2);
+            g.arc(-headR * 0.18, -headR * 0.2, headR * 0.1, 0, Math.PI * 2);
+            g.arc(headR * 0.18, -headR * 0.2, headR * 0.1, 0, Math.PI * 2);
+            g.arc(0, -headR * 0.28, headR * 0.1, 0, Math.PI * 2);
+            g.fill();
+            g.restore();
+          } else if (acc === "band") {
+            g.save();
+            g.strokeStyle = "rgba(255, 209, 102, .9)";
+            g.lineWidth = size * 0.06;
+            g.lineCap = "round";
+            g.beginPath();
+            g.arc(cx, cy - headR * 0.66, headR * 0.86, Math.PI * 1.1, Math.PI * 1.9);
+            g.stroke();
+            g.restore();
+          } else if (acc === "compass") {
+            g.save();
+            g.translate(cx - headR * 0.86, cy + headR * 0.55);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.beginPath();
+            g.arc(0, 0, headR * 0.22, 0, Math.PI * 2);
+            g.fill();
+            g.strokeStyle = "rgba(18,24,38,.45)";
+            g.lineWidth = Math.max(2, size * 0.01);
+            g.beginPath();
+            g.moveTo(0, -headR * 0.14);
+            g.lineTo(0, headR * 0.14);
+            g.moveTo(-headR * 0.14, 0);
+            g.lineTo(headR * 0.14, 0);
+            g.stroke();
+            g.restore();
+          }
+
+          g.save();
+          g.globalAlpha = 0.18;
+          g.fillStyle = "rgba(0,0,0,1)";
+          g.fillRect(0, 0, size, size);
+          g.globalCompositeOperation = "screen";
+          g.globalAlpha = 0.28;
+          g.drawImage(noise, 0, 0, size, size);
+          g.restore();
+          return c;
+        };
+
+        const getPortrait = role => {
+          const key = portraitKey(role);
+          if (portraitCache.has(key)) return portraitCache.get(key);
+          const c = drawPortraitTo(role, 240);
+          portraitCache.set(key, c);
+          return c;
+        };
+
+        const drawTopBar = (t) => {
+          const pad = 22;
+          const h = 116;
+          shadow(16, 0.14);
+          roundRect(pad, pad, LOGICAL_W - pad * 2, h, 24);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+
+          ctx.fillStyle = "rgba(18,24,38,.78)";
+          ctx.font = styleText(22, 900);
+          ctx.fillText("一分钟人生岔路口", pad + 20, pad + 44);
+          ctx.font = styleText(16, 700);
+          const stepText = state.view === "play" ? `第 ${Math.min(state.step + 1, TOTAL_STEPS)} / ${TOTAL_STEPS} 步 · ${state.role.name}` : `${state.role ? state.role.name : ""}`;
+          ctx.fillStyle = "rgba(48, 62, 88, .8)";
+          ctx.fillText(stepText, pad + 20, pad + 72);
+
+          const statX0 = pad + 20;
+          const statY0 = pad + 82;
+          const gap = 10;
+          const itemW = (LOGICAL_W - pad * 2 - 40 - gap * 3) / 4;
+          for (let i = 0; i < STATS.length; i++) {
+            const it = STATS[i];
+            const x = statX0 + i * (itemW + gap);
+            const v = state.stats[it.key];
+            ctx.fillStyle = "rgba(18,24,38,.55)";
+            ctx.font = styleText(12, 800);
+            ctx.fillText(it.label, x, statY0 + 14);
+            ctx.font = styleText(12, 900);
+            ctx.textAlign = "right";
+            ctx.fillText(String(v), x + itemW, statY0 + 14);
+            ctx.textAlign = "left";
+            roundRect(x, statY0 + 22, itemW, 10, 999);
+            ctx.fillStyle = "rgba(18,24,38,.09)";
+            ctx.fill();
+            roundRect(x, statY0 + 22, itemW * (v / 100), 10, 999);
+            const g = ctx.createLinearGradient(x, 0, x + itemW, 0);
+            g.addColorStop(0, it.c0);
+            g.addColorStop(1, it.c1);
+            ctx.fillStyle = g;
+            ctx.fill();
+          }
+        };
+
+        const drawBubble = (x, y, w, h, tipX) => {
+          shadow(18, 0.16);
+          roundRect(x, y, w, h, 26);
+          ctx.fillStyle = "rgba(255,255,255,.86)";
+          ctx.fill();
+          clearShadow();
+          ctx.beginPath();
+          ctx.moveTo(tipX, y + h);
+          ctx.lineTo(tipX + 22, y + h);
+          ctx.lineTo(tipX + 6, y + h + 22);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(255,255,255,.86)";
+          ctx.fill();
+        };
+
+        const drawButton = (b, label, variant, disabled, t) => {
+          const press = b.down ? 1 : 0;
+          const lift = 1 - press;
+          const x = b.x;
+          const y = b.y + press * 4;
+          const w = b.w;
+          const h = b.h;
+          const r = 22;
+          const base = variant === "primary" ? "#ffd166" : variant === "mint" ? "#b8f2e6" : "#e9eef7";
+          const top = variant === "primary" ? "#ffe6a3" : variant === "mint" ? "#e6fff9" : "#f6f8fc";
+          const textC = variant === "ghost" ? "rgba(18,24,38,.82)" : "rgba(18,24,38,.88)";
+          const alpha = disabled ? 0.55 : 1;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          shadow(18, 0.18 * lift);
+          roundRect(x, y, w, h, r);
+          const g = ctx.createLinearGradient(x, y, x, y + h);
+          g.addColorStop(0, top);
+          g.addColorStop(1, base);
+          ctx.fillStyle = g;
+          ctx.fill();
+          clearShadow();
+
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgba(18,24,38,.08)";
+          roundRect(x + 1, y + 1, w - 2, h - 2, r - 1);
+          ctx.stroke();
+
+          ctx.fillStyle = textC;
+          ctx.font = styleText(24, 900);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const wobble = b.hot ? 1 + 0.02 * Math.sin(t * 0.014) : 1;
+          ctx.save();
+          ctx.translate(x + w * 0.5, y + h * 0.5);
+          ctx.scale(wobble, wobble);
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          ctx.restore();
+        };
+
+        const drawToast = (t) => {
+          if (!state.toast) return;
+          const age = nowMs() - state.toastAt;
+          const dur = 1400;
+          const alpha = age < 260 ? age / 260 : age > dur ? 0 : age > dur - 360 ? (dur - age) / 360 : 1;
+          if (alpha <= 0) return;
+          const w = LOGICAL_W * 0.84;
+          const x = (LOGICAL_W - w) * 0.5;
+          const y = LOGICAL_H * 0.61;
+          shadow(22, 0.18);
+          roundRect(x, y, w, 86, 22);
+          ctx.fillStyle = `rgba(18,24,38,${0.78 * alpha})`;
+          ctx.fill();
+          clearShadow();
+          ctx.fillStyle = `rgba(255,255,255,${0.95 * alpha})`;
+          ctx.font = styleText(18, 800);
+          const lines = splitText(state.toast, w - 36, ctx.font);
+          const line = lines.length > 1 ? lines.slice(0, 2).join(" ") : lines[0];
+          ctx.fillText(line, x + 18, y + 52);
+        };
+
+        const drawSparkles = (t) => {
+          if (!state.sparkles.length) return;
+          const alive = [];
+          for (const s of state.sparkles) {
+            const age = t - s.born;
+            if (age > s.life) continue;
+            const k = age / s.life;
+            const x = s.x + s.vx * age;
+            const y = s.y + s.vy * age + 0.0014 * age * age;
+            const a = (1 - k) * 0.85;
+            ctx.fillStyle = `hsla(${s.hue}, 92%, 70%, ${a})`;
+            ctx.beginPath();
+            ctx.arc(x, y, s.r * (1 - k * 0.4), 0, Math.PI * 2);
+            ctx.fill();
+            alive.push(s);
+          }
+          state.sparkles = alive;
+        };
+
+        const drawStart = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "start", time: "day" }, t);
+          sceneDecor({ type: "city", time: "day" }, t);
+
+          const cx = LOGICAL_W * 0.5;
+          const cy = LOGICAL_H * 0.34;
+          ctx.save();
+          shadow(28, 0.18);
+          roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.18, LOGICAL_W * 0.84, LOGICAL_H * 0.34, 30);
+          ctx.fillStyle = "rgba(255,255,255,.78)";
+          ctx.fill();
+          clearShadow();
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(54, 900);
+          ctx.textAlign = "center";
+          ctx.fillText("一分钟人生岔路口", cx, LOGICAL_H * 0.28);
+
+          ctx.font = styleText(20, 800);
+          ctx.fillStyle = "rgba(48,62,88,.85)";
+          ctx.fillText("6 次选择，生成你的一分钟平行人生。", cx, LOGICAL_H * 0.34);
+          ctx.font = styleText(16, 700);
+          ctx.fillStyle = "rgba(66,82,110,.75)";
+          ctx.fillText("纯离线运行 · 无外链 · 无网络请求", cx, LOGICAL_H * 0.38);
+          ctx.textAlign = "left";
+
+          const b = { id: "start", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.58, w: LOGICAL_W * 0.72, h: 94, down: false, hot: false };
+          btns.push(b);
+          drawButton(b, "开始人生", "primary", false, t);
+
+          const b2 = { id: "how", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.7, w: LOGICAL_W * 0.72, h: 84, down: false, hot: false };
+          btns.push(b2);
+          drawButton(b2, "玩法说明", "ghost", false, t);
+
+          if (store.bestScore > 0) {
+            const w = LOGICAL_W * 0.84;
+            const x = (LOGICAL_W - w) * 0.5;
+            const y = LOGICAL_H * 0.82;
+            shadow(16, 0.12);
+            roundRect(x, y, w, 92, 22);
+            ctx.fillStyle = "rgba(255,255,255,.72)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(18,24,38,.84)";
+            ctx.font = styleText(16, 900);
+            ctx.fillText("最高纪录", x + 18, y + 38);
+            ctx.font = styleText(16, 800);
+            ctx.fillStyle = "rgba(48,62,88,.85)";
+            ctx.fillText(`${store.bestScore} 分 · ${store.bestTitle || "已记录"}`, x + 18, y + 66);
+          }
+        };
+
+        const drawHow = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "start", time: "evening" }, t);
+          sceneDecor({ type: "library", time: "evening" }, t);
+          const pad = 26;
+          shadow(24, 0.16);
+          roundRect(pad, LOGICAL_H * 0.16, LOGICAL_W - pad * 2, LOGICAL_H * 0.56, 30);
+          ctx.fillStyle = "rgba(255,255,255,.82)";
+          ctx.fill();
+          clearShadow();
+
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(36, 900);
+          ctx.fillText("玩法说明", pad + 20, LOGICAL_H * 0.22);
+          ctx.font = styleText(18, 800);
+          ctx.fillStyle = "rgba(48,62,88,.86)";
+          const text = "每局随机获得 1 个身份，并抽取 6 个不重复场景。\n每一步只有两个选项：点一下先看结果，再点继续进入下一幕。\n属性包括心态、钱包、运气、离谱值。\n最后根据属性生成荒诞结局，并支持复制分享文案。";
+          const lines = text.split("\n");
+          let y = LOGICAL_H * 0.27;
+          for (const line of lines) {
+            ctx.fillText(line, pad + 20, y);
+            y += 30;
+          }
+
+          const b = { id: "back", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.76, w: LOGICAL_W * 0.72, h: 88, down: false, hot: false };
+          btns.push(b);
+          drawButton(b, "返回", "mint", false, t);
+        };
+
+        const drawPlay = (t) => {
+          btns.length = 0;
+          const scene = state.steps[state.step];
+          bgGrad(scene.bg, t);
+          sceneDecor(scene.bg, t);
+          drawTopBar(t);
+
+          const portrait = getPortrait(state.role);
+          const pSize = 176;
+          const px = LOGICAL_W * 0.72;
+          const py = LOGICAL_H * 0.16;
+          shadow(20, 0.18);
+          roundRect(px, py, pSize, pSize, 24);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+          ctx.save();
+          ctx.beginPath();
+          roundRect(px + 8, py + 8, pSize - 16, pSize - 16, 18);
+          ctx.clip();
+          ctx.drawImage(portrait, px + 8, py + 8, pSize - 16, pSize - 16);
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(18,24,38,.84)";
+          ctx.font = styleText(16, 900);
+          ctx.fillText(state.role.badge, px, py + pSize + 28);
+
+          const bubbleW = LOGICAL_W * 0.86;
+          const bubbleX = (LOGICAL_W - bubbleW) * 0.5;
+          const bubbleY = LOGICAL_H * 0.42;
+          const bubbleH = 214;
+          drawBubble(bubbleX, bubbleY, bubbleW, bubbleH, bubbleX + bubbleW * 0.22);
+
+          ctx.fillStyle = "rgba(18,24,38,.88)";
+          ctx.font = styleText(22, 900);
+          const storyText = state.history.length && !state.pendingResult ? `上一幕：${state.history[state.history.length - 1].result}\n${scene.text}` : scene.text;
+          const lines = splitText(storyText, bubbleW - 54, ctx.font);
+          let y = bubbleY + 62;
+          for (let i = 0; i < Math.min(lines.length, 4); i++) {
+            ctx.fillText(lines[i], bubbleX + 28, y);
+            y += 34;
+          }
+
+          const by = LOGICAL_H * 0.72;
+          const gap = 16;
+          const bw = (LOGICAL_W * 0.86 - gap) * 0.5;
+          const bx0 = (LOGICAL_W - (bw * 2 + gap)) * 0.5;
+          if (state.pendingResult) {
+            const rw = LOGICAL_W * 0.86;
+            const rx = (LOGICAL_W - rw) * 0.5;
+            const ry = LOGICAL_H * 0.69;
+            shadow(18, 0.16);
+            roundRect(rx, ry, rw, 150, 26);
+            ctx.fillStyle = "rgba(255,255,255,.86)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(18,24,38,.9)";
+            ctx.font = styleText(18, 900);
+            ctx.fillText("这一选择带来的结果", rx + 22, ry + 36);
+            ctx.font = styleText(18, 800);
+            ctx.fillStyle = "rgba(48,62,88,.88)";
+            const resultLines = splitText(state.pendingResult, rw - 44, ctx.font);
+            for (let i = 0; i < Math.min(resultLines.length, 2); i++) {
+              ctx.fillText(resultLines[i], rx + 22, ry + 72 + i * 28);
+            }
+            const b = { id: "continue", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.84, w: LOGICAL_W * 0.72, h: 86, down: false, hot: false };
+            btns.push(b);
+            drawButton(b, state.step >= TOTAL_STEPS - 1 ? "查看结局" : `继续 → 第 ${state.step + 2} / ${TOTAL_STEPS} 步`, "primary", false, t);
+          } else {
+            const b1 = { id: "c0", x: bx0, y: by, w: bw, h: 112, down: false, hot: false, disabled: state.locked };
+            const b2 = { id: "c1", x: bx0 + bw + gap, y: by, w: bw, h: 112, down: false, hot: false, disabled: state.locked };
+            btns.push(b1, b2);
+            drawButton(b1, scene.choices[0].text, "primary", state.locked, t);
+            drawButton(b2, scene.choices[1].text, "mint", state.locked, t);
+          }
+
+          drawToast(t);
+          drawSparkles(t);
+
+          ctx.save();
+          ctx.globalAlpha = 0.22;
+          ctx.globalCompositeOperation = "overlay";
+          ctx.drawImage(noise, 0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.restore();
+        };
+
+        const drawEnding = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "ending", time: "sunset" }, t);
+          sceneDecor({ type: "roof", time: "sunset" }, t);
+          drawTopBar(t);
+
+          const pad = 26;
+          shadow(22, 0.16);
+          roundRect(pad, LOGICAL_H * 0.2, LOGICAL_W - pad * 2, LOGICAL_H * 0.42, 30);
+          ctx.fillStyle = "rgba(255,255,255,.82)";
+          ctx.fill();
+          clearShadow();
+
+          const title = state.ending ? state.ending.title : "结局";
+          const desc = state.ending ? state.ending.desc : "";
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(36, 900);
+          ctx.fillText(title, pad + 20, LOGICAL_H * 0.26);
+
+          ctx.font = styleText(18, 800);
+          ctx.fillStyle = "rgba(48,62,88,.88)";
+          const lines = splitText(desc, LOGICAL_W - pad * 2 - 40, ctx.font);
+          let y = LOGICAL_H * 0.31;
+          for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            ctx.fillText(lines[i], pad + 20, y);
+            y += 30;
+          }
+
+          const shareW = LOGICAL_W - pad * 2;
+          const shareX = pad;
+          const shareY = LOGICAL_H * 0.64;
+          shadow(18, 0.12);
+          roundRect(shareX, shareY, shareW, 108, 26);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+          ctx.fillStyle = "rgba(18,24,38,.88)";
+          ctx.font = styleText(16, 900);
+          ctx.fillText("分享文案", shareX + 18, shareY + 34);
+          ctx.font = styleText(16, 800);
+          ctx.fillStyle = "rgba(48,62,88,.86)";
+          const shareLines = splitText(state.share || "", shareW - 36, ctx.font);
+          const sLine = shareLines.length > 2 ? `${shareLines[0]}${shareLines[1]}` : shareLines.join("");
+          ctx.fillText(sLine, shareX + 18, shareY + 66);
+
+          const by = LOGICAL_H * 0.8;
+          const gap = 16;
+          const bw = (LOGICAL_W * 0.86 - gap) * 0.5;
+          const bx0 = (LOGICAL_W - (bw * 2 + gap)) * 0.5;
+          const b1 = { id: "copy", x: bx0, y: by, w: bw, h: 104, down: false, hot: false };
+          const b2 = { id: "again", x: bx0 + bw + gap, y: by, w: bw, h: 104, down: false, hot: false };
+          btns.push(b1, b2);
+          drawButton(b1, "复制文案", "primary", false, t);
+          drawButton(b2, "再来一次", "mint", false, t);
+
+          drawToast(t);
+          drawSparkles(t);
+
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          ctx.globalCompositeOperation = "overlay";
+          ctx.drawImage(noise, 0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.restore();
+        };
+
+        const drawFrame = (t) => {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.setTransform(scale, 0, 0, scale, ox, oy);
+          ctx.globalAlpha = 1;
+          ctx.textAlign = "left";
+          if (state.view === "start") drawStart(t);
+          else if (state.view === "how") drawHow(t);
+          else if (state.view === "play") drawPlay(t);
+          else drawEnding(t);
+        };
+
+        let pointerId = null;
+        const setHot = (x, y) => {
+          let changed = false;
+          for (const b of btns) {
+            const hot = x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+            if (!!b.hot !== hot) changed = true;
+            b.hot = hot;
+          }
+          return changed;
+        };
+
+        canvas.addEventListener("pointerdown", (e) => {
+          pointerId = e.pointerId;
+          canvas.setPointerCapture(pointerId);
+          const p = toLogical(e.clientX, e.clientY);
+          const b = hitTest(p.x, p.y);
+          if (b) {
+            b.down = true;
+            ensureAudio();
+            if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
+            beep(360, 0.04, "sine");
+          }
+          setHot(p.x, p.y);
+        }, { passive: true });
+
+        canvas.addEventListener("pointermove", (e) => {
+          const p = toLogical(e.clientX, e.clientY);
+          setHot(p.x, p.y);
+        }, { passive: true });
+
+        canvas.addEventListener("pointerup", (e) => {
+          const p = toLogical(e.clientX, e.clientY);
+          const b = hitTest(p.x, p.y);
+          for (const it of btns) it.down = false;
+          if (!b) return;
+          if (b.disabled) return;
+          if (state.view === "start") {
+            if (b.id === "start") {
+              freshRun();
+              return;
+            }
+            if (b.id === "how") {
+              state.view = "how";
+              state.animAt = nowMs();
+              return;
+            }
+          } else if (state.view === "how") {
+            if (b.id === "back") {
+              state.view = "start";
+              state.animAt = nowMs();
+              return;
+            }
+          } else if (state.view === "play") {
+            if (b.id === "c0") choose(0);
+            else if (b.id === "c1") choose(1);
+            else if (b.id === "continue") continueAfterResult();
+          } else if (state.view === "ending") {
+            if (b.id === "copy") copyShare();
+            else if (b.id === "again") {
+              state.view = "start";
+              state.animAt = nowMs();
+              state.toast = "";
+              addSpark(LOGICAL_W * 0.5, LOGICAL_H * 0.62, 18);
+              beep(520, 0.08, "triangle");
+            }
+          }
+        }, { passive: true });
+
+        canvas.addEventListener("pointercancel", () => {
+          pointerId = null;
+          for (const it of btns) it.down = false;
+        }, { passive: true });
+
+        const loop = (t) => {
+          drawFrame(t);
+          requestAnimationFrame(loop);
+        };
+
+        loadStore();
+        makeNoise();
+        resize();
+        window.addEventListener("resize", resize, { passive: true });
+        window.addEventListener("orientationchange", () => window.setTimeout(resize, 60), { passive: true });
+        requestAnimationFrame(loop);
+      } catch (_) {
+        const fatal = document.getElementById("fatal");
+        if (fatal) {
+          fatal.style.display = "flex";
+          const p = fatal.querySelector("p");
+          if (p) p.textContent = ERROR_TEXT;
         }
       }
-    }, isLast ? "看结局" : `继续 →  第 ${state.step+1} / ${TOTAL_STEPS} 步`);
-    // 替换选项区为继续按钮
-    choicesNode.replaceChildren(nextBtn);
-    // 滚动到结果，确保移动端能看到
-    requestAnimationFrame(() => {
-      result.scrollIntoView({behavior:"smooth", block:"center"});
-    });
-  }
-
-  function finishGame(){
-    state.ending = makeEnding();
-    state.view = "ending";
-    renderEnding();
-  }
-
-  function makeEnding(){
-    const candidates = ENDINGS.filter(e => e.test(state.stats));
-    let chosen;
-    if (candidates.length){
-      const maxW = Math.max(...candidates.map(c=>c.w));
-      chosen = pick(candidates.filter(c=>c.w===maxW));
-    } else {
-      chosen = pick(ENDINGS);
-    }
-    const title = chosen.title.includes(state.role.name) ? chosen.title : `${state.role.name}版${chosen.title}`;
-    return {
-      title,
-      rawTitle: chosen.title,
-      desc: chosen.desc,
-      share: buildShareText(title)
-    };
-  }
-
-  function buildShareText(title){
-    // 拿一条最戏剧化的历史
-    const highlight = state.history
-      .slice()
-      .sort((a,b)=>{
-        const sum = x => Object.values(x.effects).reduce((s,v)=>s+Math.abs(v),0);
-        return sum(b) - sum(a);
-      })[0];
-    const tail = highlight ? `\n关键时刻：${highlight.choice} → ${highlight.result}` : "";
-    return `我在《一分钟人生岔路口》里活成了：${title}${tail}`;
-  }
-
-  function renderEnding(){
-    // 解锁记录（按未带身份前缀的原始 title）
-    const isNew = addUnlocked(state.ending.rawTitle);
-    const unlocked = getUnlocked().length;
-
-    const recap = el("div",{class:"recap"});
-    state.history.forEach(h=>{
-      recap.appendChild(el("div",{},
-        el("b",{}, String(h.step)),
-        el("span",{}, `${h.choice} — ${h.result}`)
-      ));
-    });
-
-    const shareBox = el("div",{class:"share",id:"shareText"}, state.ending.share);
-    const toast = el("div",{class:"toast"});
-
-    const titleNode = el("h2",{}, state.ending.title);
-    if (isNew) titleNode.appendChild(el("span",{class:"pill"},"✨ 新解锁"));
-
-    const card = el("section",{class:"card"},
-      el("div",{class:"topline"}, el("span",{},"你的平行人生结局"), el("span",{}, `已解锁 ${unlocked} / ${ENDINGS.length}`)),
-      el("div",{class:"ending-box"},
-        titleNode,
-        el("p",{class:"subtitle",style:"margin-top:10px"}, state.ending.desc)
-      ),
-      statsBlock(state.stats),
-      el("details",{},
-        el("summary",{style:"cursor:pointer;color:#536174;font-size:13px;padding:4px 0"},"展开 6 步回顾"),
-        recap
-      ),
-      shareBox,
-      el("div",{class:"row"},
-        el("button",{onclick:()=>copyShare(shareBox, toast)},"复制分享文案"),
-        el("button",{class:"secondary",onclick:resetAll},"再来一次")
-      ),
-      toast
-    );
-    mount(card);
-  }
-
-  function copyShare(node, toast){
-    const text = state.ending.share;
-    const showToast = msg => {
-      toast.textContent = msg;
-      toast.style.opacity = "1";
-      clearTimeout(copyShare._t);
-      copyShare._t = setTimeout(()=>{ toast.style.opacity = "0"; }, 1800);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text)
-        .then(()=>showToast("分享文案已复制。"))
-        .catch(()=>{ selectNode(node); showToast("已选中文案，长按复制。"); });
-    } else {
-      selectNode(node);
-      showToast("已选中文案，长按复制。");
-    }
-  }
-
-  function selectNode(node){
-    if (!window.getSelection) return;
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  function resetAll(){
-    state.view = "start";
-    state.role = null;
-    state.step = 0;
-    state.eventQueue = [];
-    state.history = [];
-    state.ending = null;
-    state.stats = {mood:50,money:50,luck:50,crazy:50};
-    if (typingTimer){ clearInterval(typingTimer); typingTimer = null; }
-    viewStart();
-  }
-
-  // 启动
-  viewStart();
-})();
-</script>
+    })();
+  </script>
 </body>
 </html>

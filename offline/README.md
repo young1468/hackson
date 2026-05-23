@@ -6,6 +6,7 @@
 
 - 入口文件：`index.html`
 - 单文件实现，CSS 和 JS 全部内联
+- 已迁移 `minute-life-sim` 的 Canvas 视觉表现
 - 无网络请求
 - 无外部资源引用
 - 不依赖后端或大模型服务
