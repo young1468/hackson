@@ -1,574 +1,807 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>一分钟人生岔路口</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; overflow-x: hidden; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      color: #18202f;
-      background:
-        radial-gradient(circle at 14% 12%, rgba(255, 214, 102, .55), transparent 28%),
-        radial-gradient(circle at 88% 10%, rgba(79, 209, 197, .42), transparent 30%),
-        linear-gradient(160deg, #f7f3e8 0%, #eaf5f2 47%, #f5e8ef 100%);
-    }
-    .app {
-      width: 100%;
-      min-height: 100vh;
-      min-height: 100svh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-    }
-    .card {
-      width: min(100%, 430px);
-      min-height: min(720px, calc(100svh - 36px));
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 18px;
-      padding: 22px;
-      border: 1px solid rgba(24, 32, 47, .12);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .78);
-      box-shadow: 0 18px 55px rgba(55, 62, 78, .16);
-      backdrop-filter: blur(14px);
-      animation: rise .26s ease-out;
-    }
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .topline { color: #4e5a6d; font-size: 13px; letter-spacing: 0; }
-    h1, h2, p { margin: 0; }
-    h1 { font-size: 34px; line-height: 1.08; letter-spacing: 0; }
-    h2 { font-size: 26px; line-height: 1.15; letter-spacing: 0; }
-    .subtitle { color: #536174; font-size: 17px; line-height: 1.65; }
-    .story {
-      min-height: 112px;
-      padding: 16px;
-      border: 1px solid rgba(24, 32, 47, .1);
-      border-radius: 8px;
-      background: #fffdf8;
-      font-size: 19px;
-      line-height: 1.62;
-      white-space: pre-wrap;
-    }
-    .role-box, .ending-box {
-      padding: 16px;
-      border-radius: 8px;
-      background: #fffdf8;
-      border: 1px solid rgba(24, 32, 47, .1);
-    }
-    .role-name { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
-    .stats { display: grid; gap: 10px; }
-    .stat-head { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; color: #435064; }
-    .bar {
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(24, 32, 47, .09);
-      overflow: hidden;
-    }
-    .bar > span {
-      display: block;
-      height: 100%;
-      width: 50%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #2bb3a3, #f2bf4d);
-      transition: width .28s ease;
-    }
-    .choices { display: grid; gap: 12px; }
-    button {
-      width: 100%;
-      min-height: 52px;
-      border: 0;
-      border-radius: 8px;
-      padding: 14px 16px;
-      font: inherit;
-      font-weight: 750;
-      color: #172033;
-      background: #ffcf5a;
-      box-shadow: 0 8px 18px rgba(140, 105, 26, .18);
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    button.secondary { background: #d9f0ed; box-shadow: none; }
-    button.ghost { background: #eef1f5; box-shadow: none; }
-    button:disabled { opacity: .58; cursor: default; }
-    .result {
-      min-height: 44px;
-      padding: 12px 14px;
-      border-left: 4px solid #2bb3a3;
-      border-radius: 6px;
-      background: rgba(43, 179, 163, .1);
-      color: #263247;
-      font-size: 15px;
-      line-height: 1.55;
-    }
-    .row { display: flex; gap: 10px; }
-    .row button { flex: 1; }
-    .small { color: #647084; font-size: 13px; line-height: 1.55; }
-    .share {
-      user-select: text;
-      padding: 13px;
-      border-radius: 8px;
-      background: #eef1f5;
-      color: #263247;
-      line-height: 1.5;
-    }
-    .toast {
-      min-height: 22px;
-      color: #a45038;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-    @media (max-width: 360px) {
-      .app { padding: 12px; }
-      .card { padding: 18px; gap: 14px; }
-      h1 { font-size: 30px; }
-      h2 { font-size: 23px; }
-      .story { font-size: 17px; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f3e8">
+<title>一分钟人生岔路口</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;overflow-x:hidden}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:#18202f;
+    -webkit-tap-highlight-color:transparent;
+    background:
+      radial-gradient(circle at 14% 12%,rgba(255,214,102,.55),transparent 28%),
+      radial-gradient(circle at 88% 10%,rgba(79,209,197,.42),transparent 30%),
+      linear-gradient(160deg,#f7f3e8 0%,#eaf5f2 47%,#f5e8ef 100%);
+  }
+  .app{
+    width:100%;min-height:100vh;min-height:100svh;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .card{
+    width:min(100%,440px);
+    display:flex;flex-direction:column;gap:18px;
+    padding:22px;
+    border:1px solid rgba(24,32,47,.12);
+    border-radius:14px;
+    background:rgba(255,255,255,.82);
+    box-shadow:0 18px 55px rgba(55,62,78,.16);
+    backdrop-filter:blur(14px);
+    animation:rise .26s ease-out;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  h1,h2,h3,p{margin:0}
+  h1{font-size:32px;line-height:1.1}
+  h2{font-size:24px;line-height:1.18}
+  .topline{color:#4e5a6d;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .subtitle{color:#536174;font-size:16px;line-height:1.65}
+
+  /* progress dots */
+  .dots{display:flex;gap:6px}
+  .dots i{flex:1;height:4px;border-radius:2px;background:rgba(24,32,47,.12);transition:background .25s}
+  .dots i.done{background:#2bb3a3}
+  .dots i.now{background:#ffcf5a}
+
+  /* story */
+  .story{
+    min-height:120px;
+    padding:16px;
+    border:1px solid rgba(24,32,47,.1);
+    border-radius:10px;
+    background:#fffdf8;
+    font-size:18px;line-height:1.65;
+    white-space:pre-wrap;
+    cursor:pointer;
+    position:relative;
+  }
+  .story .hint{
+    position:absolute;right:10px;bottom:6px;
+    font-size:11px;color:#8a93a3;opacity:0;transition:opacity .2s;
+  }
+  .story.typing .hint{opacity:1}
+  .story .caret{display:inline-block;width:6px;height:1em;vertical-align:-2px;background:#2bb3a3;margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* role / ending */
+  .role-box,.ending-box{
+    padding:16px;border-radius:10px;background:#fffdf8;
+    border:1px solid rgba(24,32,47,.1);
+  }
+  .role-name{font-size:28px;font-weight:800;margin-bottom:6px}
+  .reel{
+    height:42px;overflow:hidden;font-size:30px;font-weight:800;
+    color:#18202f;letter-spacing:.5px;
+  }
+  .reel .track{display:flex;flex-direction:column;transition:transform .42s cubic-bezier(.2,.7,.2,1)}
+  .reel .track > div{height:42px;line-height:42px}
+
+  /* stats */
+  .stats{display:grid;gap:10px}
+  .stat{position:relative}
+  .stat-head{display:flex;justify-content:space-between;font-size:13px;color:#435064;margin-bottom:4px}
+  .stat-head strong{font-variant-numeric:tabular-nums}
+  .bar{height:8px;border-radius:999px;background:rgba(24,32,47,.09);overflow:hidden}
+  .bar > span{display:block;height:100%;width:50%;border-radius:inherit;background:linear-gradient(90deg,#2bb3a3,#f2bf4d);transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .delta{
+    position:absolute;right:0;top:-2px;font-size:12px;font-weight:700;
+    pointer-events:none;opacity:0;
+  }
+  .delta.up{color:#1f9e72}
+  .delta.down{color:#c2533a}
+  .delta.show{animation:floatUp 1s ease-out forwards}
+  @keyframes floatUp{
+    0%{opacity:0;transform:translateY(6px)}
+    15%{opacity:1}
+    100%{opacity:0;transform:translateY(-18px)}
+  }
+
+  /* buttons */
+  .choices{display:grid;gap:10px}
+  button{
+    width:100%;min-height:50px;border:0;border-radius:10px;
+    padding:13px 16px;font:inherit;font-weight:700;color:#172033;
+    background:#ffcf5a;box-shadow:0 8px 18px rgba(140,105,26,.18);
+    cursor:pointer;touch-action:manipulation;
+    transition:transform .08s ease, opacity .2s;
+  }
+  button:active:not(:disabled){transform:translateY(1px)}
+  button.secondary{background:#d9f0ed;box-shadow:none}
+  button.ghost{background:#eef1f5;box-shadow:none;font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
+  .row{display:flex;gap:10px}
+  .row button{flex:1}
+
+  .result{
+    padding:12px 14px;
+    border-left:4px solid #2bb3a3;
+    border-radius:6px;
+    background:rgba(43,179,163,.1);
+    color:#263247;font-size:14px;line-height:1.55;
+    animation:rise .25s ease-out;
+  }
+
+  .recap{
+    display:grid;gap:8px;max-height:200px;overflow-y:auto;
+    padding:12px;border-radius:10px;background:#fffdf8;
+    border:1px solid rgba(24,32,47,.08);
+    font-size:13px;line-height:1.5;color:#3d4757;
+  }
+  .recap div{display:flex;gap:8px}
+  .recap b{flex:0 0 18px;color:#2bb3a3;font-weight:700}
+
+  .share{
+    user-select:text;padding:13px;border-radius:10px;
+    background:#eef1f5;color:#263247;line-height:1.5;font-size:14px;
+  }
+  .toast{
+    min-height:20px;color:#a45038;font-size:13px;text-align:center;
+    transition:opacity .2s;
+  }
+
+  /* tutorial */
+  .rules{display:grid;gap:10px;padding:14px;border-radius:10px;background:#fffdf8;border:1px solid rgba(24,32,47,.1);font-size:14px;line-height:1.6;color:#3d4757}
+  .rules .item{display:flex;gap:10px}
+  .rules .item b{flex:0 0 56px;color:#18202f;font-weight:700}
+  .stat-hint{font-size:12px;color:#7a8497;line-height:1.5;padding:0 2px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#2bb3a3;color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:1px}
+  .meta{font-size:12px;color:#7a8497;text-align:center}
+
+  @media (max-width:360px){
+    .app{padding:12px}
+    .card{padding:18px;gap:14px}
+    h1{font-size:28px}
+    .story{font-size:16px;min-height:100px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  }
+</style>
 </head>
 <body>
-  <main id="app" class="app" aria-live="polite"></main>
-  <script>
-    (() => {
-      "use strict";
+<main id="app" class="app"></main>
+<script>
+(() => {
+  "use strict";
 
-      const TOTAL_STEPS = 6;
-      const STAT_LABELS = { mood: "心态", money: "钱包", luck: "运气", crazy: "离谱值" };
-      const ROLES = [
-        { id: "student", name: "大学生", desc: "你有三份作业、两门考试和一颗想睡到自然醒的心。", stats: { mood: 62, money: 38, luck: 55, crazy: 35 } },
-        { id: "office", name: "社畜", desc: "你熟练掌握表情包回复、会议点头和把咖啡当护身符。", stats: { mood: 52, money: 58, luck: 45, crazy: 42 } },
-        { id: "startup", name: "创业者", desc: "你拥有一个商业计划、一张空白表格和一种明天就会起飞的错觉。", stats: { mood: 68, money: 42, luck: 48, crazy: 62 } },
-        { id: "cat", name: "猫", desc: "你没有工作，但全家都在为你的情绪价值打工。", stats: { mood: 74, money: 28, luck: 64, crazy: 55 } },
-        { id: "space", name: "外星人", desc: "你刚降落地球，误以为便利店关东煮是能量核心。", stats: { mood: 60, money: 24, luck: 58, crazy: 75 } }
-      ];
+  // ====== 数据 ======
+  const TOTAL_STEPS = 6;
+  const STAT_KEYS = ["mood","money","luck","crazy"];
+  const STAT_LABELS = {mood:"心态",money:"钱包",luck:"运气",crazy:"离谱值"};
 
-      const EVENTS = {
-        student: [
-          { story: "凌晨一点，论文只写了标题。室友问你要不要一起点夜宵，说这也算学术燃料。", choices: [
-            { text: "点最大份，边吃边写", result: "你吃出了灵感，也吃出了困意。论文开头像菜单，导师沉默了。", effects: { mood: 8, money: -14, luck: -2, crazy: 10 } },
-            { text: "拒绝夜宵，打开文献", result: "你读完摘要后开始敬畏知识，顺便睡着了二十分钟。", effects: { mood: -4, money: 4, luck: 6, crazy: -3 } }
-          ] },
-          { story: "老师突然说下节课随堂展示。你的 PPT 还停留在“新建演示文稿”。", choices: [
-            { text: "用极简风硬讲", result: "三页空白被你讲成了哲学。老师说你很有留白意识。", effects: { mood: 10, money: 0, luck: 10, crazy: 14 } },
-            { text: "请求组员救命", result: "组员发来一个压缩包，里面还有三个压缩包。", effects: { mood: -8, money: 0, luck: 2, crazy: 8 } }
-          ] },
-          { story: "校园卡余额只剩三块二，但食堂窗口今天出了隐藏菜。", choices: [
-            { text: "冲向隐藏菜", result: "阿姨看你眼神坚定，多给了一勺。你短暂相信命运。", effects: { mood: 12, money: -3, luck: 12, crazy: 3 } },
-            { text: "买白饭配想象力", result: "你把白饭吃出了纪录片旁白感，精神上很富足。", effects: { mood: -4, money: 6, luck: 0, crazy: 8 } }
-          ] },
-          { story: "社团招新让你扮演吉祥物，你发现服装里比图书馆还安静。", choices: [
-            { text: "认真挥手营业", result: "你被小朋友围住合影，社团误以为你天生适合公关。", effects: { mood: 8, money: 0, luck: 9, crazy: 7 } },
-            { text: "躲进角落降温", result: "你被当成沉浸式雕塑，路过的人开始许愿。", effects: { mood: -2, money: 0, luck: 5, crazy: 13 } }
-          ] },
-          { story: "考试前夜，群里流传一份“重点”，文件名叫最终最终真最终。", choices: [
-            { text: "相信重点", result: "考卷确实有重点，只是重点在你没看的下一页。", effects: { mood: -10, money: 0, luck: -8, crazy: 4 } },
-            { text: "自己梳理提纲", result: "你发现自己会的不多，但至少知道不会在哪里。", effects: { mood: 3, money: 0, luck: 8, crazy: -4 } }
-          ] },
-          { story: "你在图书馆抢到了插座位，但旁边同学键盘声像小型降雨。", choices: [
-            { text: "戴耳机进入专注模式", result: "耳机没电了。你开始和键盘雨达成节奏合作。", effects: { mood: -3, money: 0, luck: -2, crazy: 8 } },
-            { text: "换到窗边", result: "窗边阳光很好，你的学习效率和植物同步提升。", effects: { mood: 9, money: 0, luck: 6, crazy: -2 } }
-          ] },
-          { story: "你报名了志愿活动，到了现场才知道任务是教大爷使用智能电视。", choices: [
-            { text: "耐心讲遥控器", result: "大爷学会了投屏，还反过来教你修自行车。", effects: { mood: 10, money: 0, luck: 10, crazy: 2 } },
-            { text: "直接写使用说明", result: "说明写得很正式，大爷看完说像小区公告。", effects: { mood: -2, money: 0, luck: 2, crazy: 5 } }
-          ] },
-          { story: "宿舍突然停电，大家围着充电宝像围着古代火种。", choices: [
-            { text: "贡献自己的充电宝", result: "你成为临时首领，但手机只剩百分之九。", effects: { mood: 6, money: 0, luck: 6, crazy: 8 } },
-            { text: "保存电量装睡", result: "你成功省电，却错过了室友即兴讲鬼故事改成讲冷笑话。", effects: { mood: 0, money: 0, luck: -3, crazy: -2 } }
-          ] }
-        ],
-        office: [
-          { story: "老板问“这个需求简单吧”，会议室空气突然变得很懂事。", choices: [
-            { text: "回复：问题不大", result: "老板立刻把你拉进三个会议，问题长出了翅膀。", effects: { mood: -12, money: 0, luck: -4, crazy: 9 } },
-            { text: "说需要评估", result: "大家点头，你获得了二十分钟神圣缓冲区。", effects: { mood: 5, money: 0, luck: 6, crazy: -2 } }
-          ] },
-          { story: "测试环境突然不动了，同事们看向你，仿佛你认识每一行日志。", choices: [
-            { text: "先重启服务", result: "服务暂时好了，但你知道这只是剧情第一集。", effects: { mood: -8, money: 0, luck: -3, crazy: 8 } },
-            { text: "说这是缓存问题", result: "大家沉默三秒，然后居然信了。缓存背起了今天的锅。", effects: { mood: 6, money: 0, luck: 10, crazy: 15 } }
-          ] },
-          { story: "下午茶到了，只剩最后一杯奶茶，标签上写着“无糖加珍珠”。", choices: [
-            { text: "拿下它", result: "你喝到了珍珠，也喝到了同事的凝视。", effects: { mood: 9, money: 0, luck: -2, crazy: 4 } },
-            { text: "让给别人", result: "你获得了办公室好人卡，附带一块没人要的苏打饼。", effects: { mood: 3, money: 0, luck: 6, crazy: -1 } }
-          ] },
-          { story: "日报系统在下班前提醒你：今天还没有任何产出。", choices: [
-            { text: "写“推进若干事项”", result: "这句话像万能胶，粘住了今天。", effects: { mood: 4, money: 0, luck: 5, crazy: 6 } },
-            { text: "认真列十条", result: "你发现自己确实忙了一天，但忙得像开了静音。", effects: { mood: -3, money: 0, luck: 3, crazy: -2 } }
-          ] },
-          { story: "电梯里遇到领导，你们共同盯着楼层数字，像在参加无声辩论。", choices: [
-            { text: "主动寒暄", result: "领导想起一个新点子，你想起自己为什么不该说话。", effects: { mood: -9, money: 0, luck: -5, crazy: 7 } },
-            { text: "假装看消息", result: "手机屏幕是空的，但你的演技很满。", effects: { mood: 4, money: 0, luck: 2, crazy: 3 } }
-          ] },
-          { story: "上线前十分钟，产品说按钮颜色“有点不够命运感”。", choices: [
-            { text: "调成更亮的黄", result: "产品满意了，按钮像刚考上公务员一样精神。", effects: { mood: 3, money: 0, luck: 4, crazy: 7 } },
-            { text: "请求下个版本再说", result: "你保住了上线窗口，也获得一条未来待办。", effects: { mood: 7, money: 0, luck: 2, crazy: -3 } }
-          ] },
-          { story: "团建抽签，你抽中了“即兴表演公司价值观”。", choices: [
-            { text: "用相声方式表演", result: "全场笑了，HR 说你很有组织温度。", effects: { mood: 12, money: 0, luck: 8, crazy: 14 } },
-            { text: "把机会让给主管", result: "主管表演了三分钟，你的工位安全了三个月。", effects: { mood: 6, money: 0, luck: 6, crazy: -2 } }
-          ] },
-          { story: "你准备下班，电脑弹出系统更新：预计 47 分钟。", choices: [
-            { text: "现在更新", result: "更新完天都黑了，但电脑像换了个清爽发型。", effects: { mood: -5, money: 0, luck: 3, crazy: 2 } },
-            { text: "明天再说", result: "你合上电脑，更新提示在梦里继续追你。", effects: { mood: 8, money: 0, luck: -3, crazy: 5 } }
-          ] }
-        ],
-        startup: [
-          { story: "投资人问你商业模式是什么，你的脑海里弹出一张还没填完的表。", choices: [
-            { text: "讲平台生态", result: "投资人点头，你也不知道他懂了还是困了。", effects: { mood: 8, money: 6, luck: 5, crazy: 10 } },
-            { text: "诚实说还在验证", result: "空气短暂停顿，但你收获了一句“很真实”。", effects: { mood: -2, money: 0, luck: 8, crazy: -4 } }
-          ] },
-          { story: "团队群里有人问这个月工资什么时候发，群名忽然显得很创业。", choices: [
-            { text: "发一段热血语音", result: "大家听完沉默，财务发来余额截图更热血。", effects: { mood: -7, money: -8, luck: -3, crazy: 11 } },
-            { text: "先发一半", result: "钱包瘦了，团队稳了，咖啡从拿铁降级为速溶。", effects: { mood: 5, money: -18, luck: 6, crazy: -2 } }
-          ] },
-          { story: "你发现竞品上线了和你一模一样的功能，还多了一个会动的按钮。", choices: [
-            { text: "立刻开会反击", result: "会议产出三十个想法和一个更会动的按钮。", effects: { mood: -4, money: -3, luck: 2, crazy: 13 } },
-            { text: "先问用户要不要", result: "用户说按钮动不动都行，关键是别卡。你被现实教育了。", effects: { mood: 4, money: 0, luck: 9, crazy: -5 } }
-          ] },
-          { story: "路演现场投影仪识别不出你的电脑，仿佛资本市场先识别出了风险。", choices: [
-            { text: "脱稿讲", result: "你越讲越顺，PPT 成为不在场的传奇。", effects: { mood: 10, money: 5, luck: 12, crazy: 8 } },
-            { text: "现场换设备", result: "设备好了，字体乱了。你的标题像刚经历长途旅行。", effects: { mood: -6, money: 0, luck: -3, crazy: 5 } }
-          ] },
-          { story: "第一位付费用户出现了，但备注写着：买错了，能退吗。", choices: [
-            { text: "真诚退款", result: "用户感动，转介绍了一个真的会用的人。", effects: { mood: 5, money: -4, luck: 11, crazy: -2 } },
-            { text: "询问买错原因", result: "你收获了三页反馈，和一份产品命名危机。", effects: { mood: -2, money: 0, luck: 7, crazy: 6 } }
-          ] },
-          { story: "合伙人说应该做品牌升级，你们现在的 logo 是圆角矩形里一个字。", choices: [
-            { text: "升级 logo", result: "新 logo 像一家认真卖云朵的公司，大家莫名振奋。", effects: { mood: 9, money: -8, luck: 3, crazy: 8 } },
-            { text: "先升级产品", result: "logo 继续朴素，用户终于少点了一次返回。", effects: { mood: 6, money: 0, luck: 8, crazy: -6 } }
-          ] },
-          { story: "你准备发新闻稿，但公司最大的新闻是绿植活过了三周。", choices: [
-            { text: "写成团队韧性故事", result: "稿子很感人，绿植被任命为精神顾问。", effects: { mood: 8, money: 0, luck: 5, crazy: 13 } },
-            { text: "暂时不发", result: "你保住了品牌调性，也保住了绿植的隐私。", effects: { mood: 2, money: 0, luck: 3, crazy: -4 } }
-          ] },
-          { story: "深夜服务器费用提醒弹出，你第一次觉得云也会下账单。", choices: [
-            { text: "优化资源", result: "账单降了，代码也被你整理得像刚搬家。", effects: { mood: 6, money: 12, luck: 5, crazy: -3 } },
-            { text: "先充值续命", result: "服务稳了，钱包轻了，你给云端点了份夜宵。", effects: { mood: -2, money: -15, luck: 2, crazy: 4 } }
-          ] }
-        ],
-        cat: [
-          { story: "铲屎官买了新猫窝，但快递箱看起来更有建筑美学。", choices: [
-            { text: "入住快递箱", result: "你宣布这里是新王宫，猫窝成为王宫旁的停车场。", effects: { mood: 12, money: 0, luck: 5, crazy: 9 } },
-            { text: "勉强试猫窝", result: "你睡了三分钟，给足了人类面子。", effects: { mood: 5, money: 0, luck: 2, crazy: -2 } }
-          ] },
-          { story: "凌晨四点，你突然想起客厅还有一条看不见的赛道。", choices: [
-            { text: "全速冲刺", result: "人类惊醒，你完成个人最好成绩。", effects: { mood: 10, money: 0, luck: -2, crazy: 15 } },
-            { text: "改为安静巡视", result: "你像小区保安一样检查每个角落，威严但不扰民。", effects: { mood: 4, money: 0, luck: 5, crazy: -4 } }
-          ] },
-          { story: "碗里还有粮，但你能看见碗底一小块白色，这显然是重大危机。", choices: [
-            { text: "立刻呼叫人类", result: "人类补满了碗，你确认世界恢复秩序。", effects: { mood: 9, money: 0, luck: 4, crazy: 6 } },
-            { text: "先象征性吃两口", result: "你发现粮还行，但原则上仍需投诉。", effects: { mood: 3, money: 0, luck: 2, crazy: 2 } }
-          ] },
-          { story: "窗外飞过一片树叶，你判断它需要被严肃观察。", choices: [
-            { text: "贴窗监控", result: "树叶离开了，你守护了这片领空。", effects: { mood: 7, money: 0, luck: 6, crazy: 5 } },
-            { text: "呼叫人类一起看", result: "人类没看懂，但夸你可爱。你接受了表彰。", effects: { mood: 10, money: 0, luck: 3, crazy: 3 } }
-          ] },
-          { story: "人类正在开视频会议，你发现键盘正好适合躺下。", choices: [
-            { text: "占领键盘", result: "会议里出现一串神秘字符，同事们认为这是高级加密。", effects: { mood: 11, money: 0, luck: 8, crazy: 14 } },
-            { text: "坐在摄像头前", result: "会议效率提升，因为所有人都在夸你。", effects: { mood: 9, money: 0, luck: 7, crazy: 6 } }
-          ] },
-          { story: "洗澡水声响起，你怀疑人类又要进行奇怪的自我淋湿仪式。", choices: [
-            { text: "门口监督", result: "你发出三声质询，人类表示尊重但继续淋湿。", effects: { mood: 3, money: 0, luck: 2, crazy: 8 } },
-            { text: "远离现场", result: "你躲到沙发下，保持皮毛文明。", effects: { mood: 6, money: 0, luck: 4, crazy: -5 } }
-          ] },
-          { story: "新玩具是一只会响的小球，你决定评估它是否配得上你。", choices: [
-            { text: "疯狂扑球", result: "小球滚进沙发底，你的狩猎进入考古阶段。", effects: { mood: 8, money: 0, luck: -3, crazy: 9 } },
-            { text: "冷淡走开", result: "人类立刻开始逗你，你成功让玩具变成人类玩具。", effects: { mood: 6, money: 0, luck: 5, crazy: 4 } }
-          ] },
-          { story: "阳光落在地板上，形成一块刚好容纳猫的黄金地段。", choices: [
-            { text: "立刻躺平", result: "你被晒成一条温热的主宰，生活恢复高级。", effects: { mood: 13, money: 0, luck: 6, crazy: -3 } },
-            { text: "先绕三圈", result: "仪式完成，阳光地段正式归你所有。", effects: { mood: 8, money: 0, luck: 4, crazy: 5 } }
-          ] }
-        ],
-        space: [
-          { story: "你降落在便利店门口，自动门打开，你以为地球在欢迎外交使团。", choices: [
-            { text: "向门鞠躬", result: "店员也点了点头。你们完成了跨文明礼仪。", effects: { mood: 8, money: 0, luck: 7, crazy: 8 } },
-            { text: "研究门的魔法", result: "你站了五分钟，门开了二十次，地球科技让你肃然起敬。", effects: { mood: 5, money: 0, luck: 2, crazy: 12 } }
-          ] },
-          { story: "你第一次看见奶茶菜单，上面有三十种甜度和四十种小料。", choices: [
-            { text: "全都加一点", result: "杯子沉甸甸的，像一颗可饮用小行星。", effects: { mood: 9, money: -12, luck: 3, crazy: 14 } },
-            { text: "选择店员推荐", result: "你喝到正常奶茶，开始理解地球人的温柔陷阱。", effects: { mood: 7, money: -6, luck: 5, crazy: -2 } }
-          ] },
-          { story: "地铁广播提醒先下后上，你以为这是地球人的哲学课。", choices: [
-            { text: "认真记录", result: "你写下：文明的核心是让门口保持流动。", effects: { mood: 5, money: 0, luck: 6, crazy: 4 } },
-            { text: "跟着人群移动", result: "你被精准送进车厢，像一颗被社会算法排序的豆子。", effects: { mood: -2, money: 0, luck: 5, crazy: 8 } }
-          ] },
-          { story: "共享单车需要扫码，你把二维码当成地球部落图腾。", choices: [
-            { text: "拍照研究", result: "你没有解锁车，但收获了一张很端正的图腾照片。", effects: { mood: -2, money: 0, luck: -3, crazy: 6 } },
-            { text: "请路人帮忙", result: "路人教会你扫码，你决定把他列为地球导师。", effects: { mood: 8, money: -2, luck: 9, crazy: -3 } }
-          ] },
-          { story: "你听见有人说“摸鱼”，四处寻找水源和鱼。", choices: [
-            { text: "认真询问鱼在哪里", result: "大家笑了，然后告诉你这是一种精神游泳。", effects: { mood: 6, money: 0, luck: 5, crazy: 10 } },
-            { text: "假装听懂", result: "你点头过于坚定，被邀请加入午休散步小队。", effects: { mood: 7, money: 0, luck: 7, crazy: 5 } }
-          ] },
-          { story: "你第一次坐电梯，楼层数字上升，你怀疑飞船偷偷启动了。", choices: [
-            { text: "按住扶手稳定重心", result: "旁边小朋友也学你扶住墙，电梯里形成临时训练营。", effects: { mood: 4, money: 0, luck: 4, crazy: 7 } },
-            { text: "欣赏垂直旅行", result: "你宣布地球短途航天技术很成熟。", effects: { mood: 9, money: 0, luck: 6, crazy: 6 } }
-          ] },
-          { story: "手机电量只剩百分之一，你意识到通讯水晶即将休眠。", choices: [
-            { text: "寻找充电口", result: "你在咖啡店发现补给站，并买了一杯入场券。", effects: { mood: 5, money: -10, luck: 7, crazy: 1 } },
-            { text: "启动省电仪式", result: "你把屏幕调暗到像宇宙深处，成功多撑十分钟。", effects: { mood: 2, money: 0, luck: 4, crazy: 4 } }
-          ] },
-          { story: "你被邀请参加广场舞，音乐响起时，地面似乎拥有了集体意识。", choices: [
-            { text: "加入队形", result: "你的动作不标准，但大家夸你有星际风。", effects: { mood: 12, money: 0, luck: 8, crazy: 13 } },
-            { text: "在旁边记录", result: "你写下：地球人用同步移动维护邻里关系。", effects: { mood: 6, money: 0, luck: 5, crazy: 5 } }
-          ] }
-        ]
-      };
+  const ROLES = [
+    {id:"student",name:"大学生",desc:"你有三份作业、两门考试和一颗想睡到自然醒的心。",stats:{mood:62,money:38,luck:55,crazy:35}},
+    {id:"office", name:"社畜",  desc:"你熟练掌握表情包回复、会议点头和把咖啡当护身符。",stats:{mood:52,money:58,luck:45,crazy:42}},
+    {id:"startup",name:"创业者",desc:"你拥有一个商业计划、一张空白表格和一种明天就会起飞的错觉。",stats:{mood:68,money:42,luck:48,crazy:62}},
+    {id:"cat",    name:"猫",    desc:"你没有工作，但全家都在为你的情绪价值打工。",stats:{mood:74,money:28,luck:64,crazy:55}},
+    {id:"space",  name:"外星人",desc:"你刚降落地球，误以为便利店关东煮是能量核心。",stats:{mood:60,money:24,luck:58,crazy:75}}
+  ];
 
-      const ENDINGS = [
-        { title: "余额三块但精神富翁", desc: "你没攒下多少钱，却攒下了大量离谱经历。朋友问你怎么撑过来的，你说主要靠心态和热水。", test: s => s.money <= 12 && s.mood >= 55 },
-        { title: "全靠玄学活下来的幸运体质", desc: "每次局面快要散架，事情都会以奇怪方式自己复位。你没有解决命运，命运选择不为难你。", test: s => s.luck >= 82 },
-        { title: "离谱值超标观察对象", desc: "你的人生报告被标注为“请勿用常识解释”。大家围着你研究，最后决定先请你吃饭。", test: s => s.crazy >= 88 },
-        { title: "心态归零但流程完整", desc: "你一度只剩躯壳在点击选项，但仍然完成了六步。命运给你颁发了坚持参与奖。", test: s => s.mood <= 8 },
-        { title: "钱包安静离场的人", desc: "你的钱包像参加了静默修行，存在感很低。但你用想象力补齐了所有仪式感。", test: s => s.money <= 8 },
-        { title: "运气离线的认真选手", desc: "你每次都认真判断，每次都差一点点。好消息是，你已经练成了平静接受反转的能力。", test: s => s.luck <= 10 },
-        { title: "正常世界的异常补丁", desc: "你试图按常理生活，但常理看见你就开始拐弯。最终你成为身边人的每日小剧场。", test: s => s.crazy >= 72 && s.mood >= 45 },
-        { title: "低调但很会活的普通英雄", desc: "你没有惊天动地，只是在每个岔路口稳稳落脚。平凡今天，也算被你经营得像样。", test: s => s.crazy <= 30 && s.mood >= 60 },
-        { title: "社交分享型人生样本", desc: "你的经历短、密、好转述，像一条会自己配字幕的人生短片。朋友听完只想问：还有吗？", test: s => s.mood >= 70 && s.crazy >= 60 },
-        { title: "存款增长的清醒派", desc: "你多次忍住冲动，钱包终于有了尊严。虽然生活少了点戏剧，但多了点踏实。", test: s => s.money >= 72 },
-        { title: "情绪稳定的反转大师", desc: "无论世界怎样突然改题，你都能把笔握稳。命运看你太淡定，甚至有点不好意思。", test: s => s.mood >= 82 },
-        { title: "四项全能的岔路口冠军", desc: "你在心态、钱包、运气和离谱值之间走出了奇妙平衡。人生没有标准答案，但你这份挺能发朋友圈。", test: s => s.mood >= 60 && s.money >= 50 && s.luck >= 60 && s.crazy >= 50 },
-        { title: "被生活随机播放的人", desc: "你的六次选择像歌单随机播放，上一秒励志，下一秒跑偏。可你居然把节奏踩住了。", test: s => s.luck >= 55 && s.crazy >= 55 },
-        { title: "小心翼翼的稳定玩家", desc: "你没有把数值拉爆，也没有让世界崩盘。你用谨慎换来了一个能睡好觉的结局。", test: s => s.crazy < 45 && s.money >= 45 },
-        { title: "一边崩坏一边发光", desc: "有些属性已经报警，但你的故事仍然完整。你不是没有波动，你只是很会带着波动继续走。", test: s => s.mood <= 25 || s.money <= 20 || s.luck <= 20 }
-      ];
+  const EVENTS = {
+    student:[
+      {story:"凌晨一点，论文只写了标题。室友问你要不要一起点夜宵，说这也算学术燃料。",choices:[
+        {text:"点最大份，边吃边写",result:"你吃出了灵感，也吃出了困意。论文开头像菜单，导师沉默了。",effects:{mood:8,money:-14,luck:-2,crazy:10}},
+        {text:"拒绝夜宵，打开文献",result:"你读完摘要后开始敬畏知识，顺便睡着了二十分钟。",effects:{mood:-4,money:4,luck:6,crazy:-3}}
+      ]},
+      {story:"老师突然说下节课随堂展示。你的 PPT 还停留在“新建演示文稿”。",choices:[
+        {text:"用极简风硬讲",result:"三页空白被你讲成了哲学。老师说你很有留白意识。",effects:{mood:10,money:0,luck:10,crazy:14}},
+        {text:"请求组员救命",result:"组员发来一个压缩包，里面还有三个压缩包。",effects:{mood:-8,money:0,luck:2,crazy:8}}
+      ]},
+      {story:"校园卡余额只剩三块二，但食堂窗口今天出了隐藏菜。",choices:[
+        {text:"冲向隐藏菜",result:"阿姨看你眼神坚定，多给了一勺。你短暂相信命运。",effects:{mood:12,money:-3,luck:12,crazy:3}},
+        {text:"买白饭配想象力",result:"你把白饭吃出了纪录片旁白感，精神上很富足。",effects:{mood:-4,money:6,luck:0,crazy:8}}
+      ]},
+      {story:"社团招新让你扮演吉祥物，你发现服装里比图书馆还安静。",choices:[
+        {text:"认真挥手营业",result:"你被小朋友围住合影，社团误以为你天生适合公关。",effects:{mood:8,money:0,luck:9,crazy:7}},
+        {text:"躲进角落降温",result:"你被当成沉浸式雕塑，路过的人开始许愿。",effects:{mood:-2,money:0,luck:5,crazy:13}}
+      ]},
+      {story:"考试前夜，群里流传一份“重点”，文件名叫最终最终真最终。",choices:[
+        {text:"相信重点",result:"考卷确实有重点，只是重点在你没看的下一页。",effects:{mood:-10,money:0,luck:-8,crazy:4}},
+        {text:"自己梳理提纲",result:"你发现自己会的不多，但至少知道不会在哪里。",effects:{mood:3,money:0,luck:8,crazy:-4}}
+      ]},
+      {story:"你在图书馆抢到了插座位，但旁边同学键盘声像小型降雨。",choices:[
+        {text:"戴耳机进入专注模式",result:"耳机没电了。你开始和键盘雨达成节奏合作。",effects:{mood:-3,money:0,luck:-2,crazy:8}},
+        {text:"换到窗边",result:"窗边阳光很好，你的学习效率和植物同步提升。",effects:{mood:9,money:0,luck:6,crazy:-2}}
+      ]},
+      {story:"你报名了志愿活动，到了现场才知道任务是教大爷使用智能电视。",choices:[
+        {text:"耐心讲遥控器",result:"大爷学会了投屏，还反过来教你修自行车。",effects:{mood:10,money:0,luck:10,crazy:2}},
+        {text:"直接写使用说明",result:"说明写得很正式，大爷看完说像小区公告。",effects:{mood:-2,money:0,luck:2,crazy:5}}
+      ]},
+      {story:"宿舍突然停电，大家围着充电宝像围着古代火种。",choices:[
+        {text:"贡献自己的充电宝",result:"你成为临时首领，但手机只剩百分之九。",effects:{mood:6,money:0,luck:6,crazy:8}},
+        {text:"保存电量装睡",result:"你成功省电，却错过了室友即兴讲鬼故事改成讲冷笑话。",effects:{mood:0,money:0,luck:-3,crazy:-2}}
+      ]}
+    ],
+    office:[
+      {story:"老板问“这个需求简单吧”，会议室空气突然变得很懂事。",choices:[
+        {text:"回复：问题不大",result:"老板立刻把你拉进三个会议，问题长出了翅膀。",effects:{mood:-12,money:0,luck:-4,crazy:9}},
+        {text:"说需要评估",result:"大家点头，你获得了二十分钟神圣缓冲区。",effects:{mood:5,money:0,luck:6,crazy:-2}}
+      ]},
+      {story:"测试环境突然不动了，同事们看向你，仿佛你认识每一行日志。",choices:[
+        {text:"先重启服务",result:"服务暂时好了，但你知道这只是剧情第一集。",effects:{mood:-8,money:0,luck:-3,crazy:8}},
+        {text:"说这是缓存问题",result:"大家沉默三秒，然后居然信了。缓存背起了今天的锅。",effects:{mood:6,money:0,luck:10,crazy:15}}
+      ]},
+      {story:"下午茶到了，只剩最后一杯奶茶，标签上写着“无糖加珍珠”。",choices:[
+        {text:"拿下它",result:"你喝到了珍珠，也喝到了同事的凝视。",effects:{mood:9,money:0,luck:-2,crazy:4}},
+        {text:"让给别人",result:"你获得了办公室好人卡，附带一块没人要的苏打饼。",effects:{mood:3,money:0,luck:6,crazy:-1}}
+      ]},
+      {story:"日报系统在下班前提醒你：今天还没有任何产出。",choices:[
+        {text:"写“推进若干事项”",result:"这句话像万能胶，粘住了今天。",effects:{mood:4,money:0,luck:5,crazy:6}},
+        {text:"认真列十条",result:"你发现自己确实忙了一天，但忙得像开了静音。",effects:{mood:-3,money:0,luck:3,crazy:-2}}
+      ]},
+      {story:"电梯里遇到领导，你们共同盯着楼层数字，像在参加无声辩论。",choices:[
+        {text:"主动寒暄",result:"领导想起一个新点子，你想起自己为什么不该说话。",effects:{mood:-9,money:0,luck:-5,crazy:7}},
+        {text:"假装看消息",result:"手机屏幕是空的，但你的演技很满。",effects:{mood:4,money:0,luck:2,crazy:3}}
+      ]},
+      {story:"上线前十分钟，产品说按钮颜色“有点不够命运感”。",choices:[
+        {text:"调成更亮的黄",result:"产品满意了，按钮像刚考上公务员一样精神。",effects:{mood:3,money:0,luck:4,crazy:7}},
+        {text:"请求下个版本再说",result:"你保住了上线窗口，也获得一条未来待办。",effects:{mood:7,money:0,luck:2,crazy:-3}}
+      ]},
+      {story:"团建抽签，你抽中了“即兴表演公司价值观”。",choices:[
+        {text:"用相声方式表演",result:"全场笑了，HR 说你很有组织温度。",effects:{mood:12,money:0,luck:8,crazy:14}},
+        {text:"把机会让给主管",result:"主管表演了三分钟，你的工位安全了三个月。",effects:{mood:6,money:0,luck:6,crazy:-2}}
+      ]},
+      {story:"你准备下班，电脑弹出系统更新：预计 47 分钟。",choices:[
+        {text:"现在更新",result:"更新完天都黑了，但电脑像换了个清爽发型。",effects:{mood:-5,money:0,luck:3,crazy:2}},
+        {text:"明天再说",result:"你合上电脑，更新提示在梦里继续追你。",effects:{mood:8,money:0,luck:-3,crazy:5}}
+      ]}
+    ],
+    startup:[
+      {story:"投资人问你商业模式是什么，你的脑海里弹出一张还没填完的表。",choices:[
+        {text:"讲平台生态",result:"投资人点头，你也不知道他懂了还是困了。",effects:{mood:8,money:6,luck:5,crazy:10}},
+        {text:"诚实说还在验证",result:"空气短暂停顿，但你收获了一句“很真实”。",effects:{mood:-2,money:0,luck:8,crazy:-4}}
+      ]},
+      {story:"团队群里有人问这个月工资什么时候发，群名忽然显得很创业。",choices:[
+        {text:"发一段热血语音",result:"大家听完沉默，财务发来余额截图更热血。",effects:{mood:-7,money:-8,luck:-3,crazy:11}},
+        {text:"先发一半",result:"钱包瘦了，团队稳了，咖啡从拿铁降级为速溶。",effects:{mood:5,money:-18,luck:6,crazy:-2}}
+      ]},
+      {story:"你发现竞品上线了和你一模一样的功能，还多了一个会动的按钮。",choices:[
+        {text:"立刻开会反击",result:"会议产出三十个想法和一个更会动的按钮。",effects:{mood:-4,money:-3,luck:2,crazy:13}},
+        {text:"先问用户要不要",result:"用户说按钮动不动都行，关键是别卡。你被现实教育了。",effects:{mood:4,money:0,luck:9,crazy:-5}}
+      ]},
+      {story:"路演现场投影仪识别不出你的电脑，仿佛资本市场先识别出了风险。",choices:[
+        {text:"脱稿讲",result:"你越讲越顺，PPT 成为不在场的传奇。",effects:{mood:10,money:5,luck:12,crazy:8}},
+        {text:"现场换设备",result:"设备好了，字体乱了。你的标题像刚经历长途旅行。",effects:{mood:-6,money:0,luck:-3,crazy:5}}
+      ]},
+      {story:"第一位付费用户出现了，但备注写着：买错了，能退吗。",choices:[
+        {text:"真诚退款",result:"用户感动，转介绍了一个真的会用的人。",effects:{mood:5,money:-4,luck:11,crazy:-2}},
+        {text:"询问买错原因",result:"你收获了三页反馈，和一份产品命名危机。",effects:{mood:-2,money:0,luck:7,crazy:6}}
+      ]},
+      {story:"合伙人说应该做品牌升级，你们现在的 logo 是圆角矩形里一个字。",choices:[
+        {text:"升级 logo",result:"新 logo 像一家认真卖云朵的公司，大家莫名振奋。",effects:{mood:9,money:-8,luck:3,crazy:8}},
+        {text:"先升级产品",result:"logo 继续朴素，用户终于少点了一次返回。",effects:{mood:6,money:0,luck:8,crazy:-6}}
+      ]},
+      {story:"你准备发新闻稿，但公司最大的新闻是绿植活过了三周。",choices:[
+        {text:"写成团队韧性故事",result:"稿子很感人，绿植被任命为精神顾问。",effects:{mood:8,money:0,luck:5,crazy:13}},
+        {text:"暂时不发",result:"你保住了品牌调性，也保住了绿植的隐私。",effects:{mood:2,money:0,luck:3,crazy:-4}}
+      ]},
+      {story:"深夜服务器费用提醒弹出，你第一次觉得云也会下账单。",choices:[
+        {text:"优化资源",result:"账单降了，代码也被你整理得像刚搬家。",effects:{mood:6,money:12,luck:5,crazy:-3}},
+        {text:"先充值续命",result:"服务稳了，钱包轻了，你给云端点了份夜宵。",effects:{mood:-2,money:-15,luck:2,crazy:4}}
+      ]}
+    ],
+    cat:[
+      {story:"铲屎官买了新猫窝，但快递箱看起来更有建筑美学。",choices:[
+        {text:"入住快递箱",result:"你宣布这里是新王宫，猫窝成为王宫旁的停车场。",effects:{mood:12,money:0,luck:5,crazy:9}},
+        {text:"勉强试猫窝",result:"你睡了三分钟，给足了人类面子。",effects:{mood:5,money:0,luck:2,crazy:-2}}
+      ]},
+      {story:"凌晨四点，你突然想起客厅还有一条看不见的赛道。",choices:[
+        {text:"全速冲刺",result:"人类惊醒，你完成个人最好成绩。",effects:{mood:10,money:0,luck:-2,crazy:15}},
+        {text:"改为安静巡视",result:"你像小区保安一样检查每个角落，威严但不扰民。",effects:{mood:4,money:0,luck:5,crazy:-4}}
+      ]},
+      {story:"碗里还有粮，但你能看见碗底一小块白色，这显然是重大危机。",choices:[
+        {text:"立刻呼叫人类",result:"人类补满了碗，你确认世界恢复秩序。",effects:{mood:9,money:0,luck:4,crazy:6}},
+        {text:"先象征性吃两口",result:"你发现粮还行，但原则上仍需投诉。",effects:{mood:3,money:0,luck:2,crazy:2}}
+      ]},
+      {story:"窗外飞过一片树叶，你判断它需要被严肃观察。",choices:[
+        {text:"贴窗监控",result:"树叶离开了，你守护了这片领空。",effects:{mood:7,money:0,luck:6,crazy:5}},
+        {text:"呼叫人类一起看",result:"人类没看懂，但夸你可爱。你接受了表彰。",effects:{mood:10,money:0,luck:3,crazy:3}}
+      ]},
+      {story:"人类正在开视频会议，你发现键盘正好适合躺下。",choices:[
+        {text:"占领键盘",result:"会议里出现一串神秘字符，同事们认为这是高级加密。",effects:{mood:11,money:0,luck:8,crazy:14}},
+        {text:"坐在摄像头前",result:"会议效率提升，因为所有人都在夸你。",effects:{mood:9,money:0,luck:7,crazy:6}}
+      ]},
+      {story:"洗澡水声响起，你怀疑人类又要进行奇怪的自我淋湿仪式。",choices:[
+        {text:"门口监督",result:"你发出三声质询，人类表示尊重但继续淋湿。",effects:{mood:3,money:0,luck:2,crazy:8}},
+        {text:"远离现场",result:"你躲到沙发下，保持皮毛文明。",effects:{mood:6,money:0,luck:4,crazy:-5}}
+      ]},
+      {story:"新玩具是一只会响的小球，你决定评估它是否配得上你。",choices:[
+        {text:"疯狂扑球",result:"小球滚进沙发底，你的狩猎进入考古阶段。",effects:{mood:8,money:0,luck:-3,crazy:9}},
+        {text:"冷淡走开",result:"人类立刻开始逗你，你成功让玩具变成人类玩具。",effects:{mood:6,money:0,luck:5,crazy:4}}
+      ]},
+      {story:"阳光落在地板上，形成一块刚好容纳猫的黄金地段。",choices:[
+        {text:"立刻躺平",result:"你被晒成一条温热的主宰，生活恢复高级。",effects:{mood:13,money:0,luck:6,crazy:-3}},
+        {text:"先绕三圈",result:"仪式完成，阳光地段正式归你所有。",effects:{mood:8,money:0,luck:4,crazy:5}}
+      ]}
+    ],
+    space:[
+      {story:"你降落在便利店门口，自动门打开，你以为地球在欢迎外交使团。",choices:[
+        {text:"向门鞠躬",result:"店员也点了点头。你们完成了跨文明礼仪。",effects:{mood:8,money:0,luck:7,crazy:8}},
+        {text:"研究门的魔法",result:"你站了五分钟，门开了二十次，地球科技让你肃然起敬。",effects:{mood:5,money:0,luck:2,crazy:12}}
+      ]},
+      {story:"你第一次看见奶茶菜单，上面有三十种甜度和四十种小料。",choices:[
+        {text:"全都加一点",result:"杯子沉甸甸的，像一颗可饮用小行星。",effects:{mood:9,money:-12,luck:3,crazy:14}},
+        {text:"选择店员推荐",result:"你喝到正常奶茶，开始理解地球人的温柔陷阱。",effects:{mood:7,money:-6,luck:5,crazy:-2}}
+      ]},
+      {story:"地铁广播提醒先下后上，你以为这是地球人的哲学课。",choices:[
+        {text:"认真记录",result:"你写下：文明的核心是让门口保持流动。",effects:{mood:5,money:0,luck:6,crazy:4}},
+        {text:"跟着人群移动",result:"你被精准送进车厢，像一颗被社会算法排序的豆子。",effects:{mood:-2,money:0,luck:5,crazy:8}}
+      ]},
+      {story:"共享单车需要扫码，你把二维码当成地球部落图腾。",choices:[
+        {text:"拍照研究",result:"你没有解锁车，但收获了一张很端正的图腾照片。",effects:{mood:-2,money:0,luck:-3,crazy:6}},
+        {text:"请路人帮忙",result:"路人教会你扫码，你决定把他列为地球导师。",effects:{mood:8,money:-2,luck:9,crazy:-3}}
+      ]},
+      {story:"你听见有人说“摸鱼”，四处寻找水源和鱼。",choices:[
+        {text:"认真询问鱼在哪里",result:"大家笑了，然后告诉你这是一种精神游泳。",effects:{mood:6,money:0,luck:5,crazy:10}},
+        {text:"假装听懂",result:"你点头过于坚定，被邀请加入午休散步小队。",effects:{mood:7,money:0,luck:7,crazy:5}}
+      ]},
+      {story:"你第一次坐电梯，楼层数字上升，你怀疑飞船偷偷启动了。",choices:[
+        {text:"按住扶手稳定重心",result:"旁边小朋友也学你扶住墙，电梯里形成临时训练营。",effects:{mood:4,money:0,luck:4,crazy:7}},
+        {text:"欣赏垂直旅行",result:"你宣布地球短途航天技术很成熟。",effects:{mood:9,money:0,luck:6,crazy:6}}
+      ]},
+      {story:"手机电量只剩百分之一，你意识到通讯水晶即将休眠。",choices:[
+        {text:"寻找充电口",result:"你在咖啡店发现补给站，并买了一杯入场券。",effects:{mood:5,money:-10,luck:7,crazy:1}},
+        {text:"启动省电仪式",result:"你把屏幕调暗到像宇宙深处，成功多撑十分钟。",effects:{mood:2,money:0,luck:4,crazy:4}}
+      ]},
+      {story:"你被邀请参加广场舞，音乐响起时，地面似乎拥有了集体意识。",choices:[
+        {text:"加入队形",result:"你的动作不标准，但大家夸你有星际风。",effects:{mood:12,money:0,luck:8,crazy:13}},
+        {text:"在旁边记录",result:"你写下：地球人用同步移动维护邻里关系。",effects:{mood:6,money:0,luck:5,crazy:5}}
+      ]}
+    ]
+  };
 
-      let state = freshState();
-      const app = document.getElementById("app");
+  // 显式权重：specificity 越大越优先匹配
+  const ENDINGS = [
+    {w:9, title:"四项全能的岔路口冠军", desc:"你在心态、钱包、运气和离谱值之间走出了奇妙平衡。人生没有标准答案，但你这份挺能发朋友圈。", test:s=>s.mood>=60&&s.money>=50&&s.luck>=60&&s.crazy>=50},
+    {w:8, title:"离谱值超标观察对象", desc:"你的人生报告被标注为“请勿用常识解释”。大家围着你研究，最后决定先请你吃饭。", test:s=>s.crazy>=88},
+    {w:8, title:"心态归零但流程完整", desc:"你一度只剩躯壳在点击选项，但仍然完成了六步。命运给你颁发了坚持参与奖。", test:s=>s.mood<=8},
+    {w:8, title:"运气离线的认真选手", desc:"你每次都认真判断，每次都差一点点。好消息是，你已经练成了平静接受反转的能力。", test:s=>s.luck<=10},
+    {w:8, title:"钱包安静离场的人", desc:"你的钱包像参加了静默修行，存在感很低。但你用想象力补齐了所有仪式感。", test:s=>s.money<=8},
+    {w:7, title:"全靠玄学活下来的幸运体质", desc:"每次局面快要散架，事情都会以奇怪方式自己复位。你没有解决命运，命运选择不为难你。", test:s=>s.luck>=82},
+    {w:7, title:"情绪稳定的反转大师", desc:"无论世界怎样突然改题，你都能把笔握稳。命运看你太淡定，甚至有点不好意思。", test:s=>s.mood>=82},
+    {w:6, title:"存款增长的清醒派", desc:"你多次忍住冲动，钱包终于有了尊严。虽然生活少了点戏剧，但多了点踏实。", test:s=>s.money>=72},
+    {w:5, title:"社交分享型人生样本", desc:"你的经历短、密、好转述，像一条会自己配字幕的人生短片。朋友听完只想问：还有吗？", test:s=>s.mood>=70&&s.crazy>=60},
+    {w:5, title:"正常世界的异常补丁", desc:"你试图按常理生活，但常理看见你就开始拐弯。最终你成为身边人的每日小剧场。", test:s=>s.crazy>=72&&s.mood>=45},
+    {w:5, title:"余额三块但精神富翁", desc:"你没攒下多少钱，却攒下了大量离谱经历。朋友问你怎么撑过来的，你说主要靠心态和热水。", test:s=>s.money<=12&&s.mood>=55},
+    {w:4, title:"低调但很会活的普通英雄", desc:"你没有惊天动地，只是在每个岔路口稳稳落脚。平凡今天，也算被你经营得像样。", test:s=>s.crazy<=30&&s.mood>=60},
+    {w:4, title:"被生活随机播放的人", desc:"你的六次选择像歌单随机播放，上一秒励志，下一秒跑偏。可你居然把节奏踩住了。", test:s=>s.luck>=55&&s.crazy>=55},
+    {w:3, title:"小心翼翼的稳定玩家", desc:"你没有把数值拉爆，也没有让世界崩盘。你用谨慎换来了一个能睡好觉的结局。", test:s=>s.crazy<45&&s.money>=45},
+    {w:1, title:"一边崩坏一边发光", desc:"有些属性已经报警，但你的故事仍然完整。你不是没有波动，你只是很会带着波动继续走。", test:s=>s.mood<=25||s.money<=20||s.luck<=20}
+  ];
 
-      function freshState() {
-        return {
-          view: "start",
-          role: null,
-          stats: { mood: 50, money: 50, luck: 50, crazy: 50 },
-          step: 0,
-          eventQueue: [],
-          currentEvent: null,
-          history: [],
-          locked: false,
-          resultText: "",
-          ending: null,
-          toast: ""
-        };
+  // ====== 工具 ======
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const el = (tag, attrs={}, ...children) => {
+    const node = document.createElement(tag);
+    for (const k in attrs) {
+      if (k === "class") node.className = attrs[k];
+      else if (k === "style") node.setAttribute("style", attrs[k]);
+      else if (k.startsWith("on") && typeof attrs[k] === "function") node.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] != null) node.setAttribute(k, attrs[k]);
+    }
+    for (const c of children) {
+      if (c == null || c === false) continue;
+      node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    return node;
+  };
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+  const shuffle = arr => {
+    const a = arr.slice();
+    for (let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  };
+
+  // ====== 状态 ======
+  const state = {
+    view: "start",      // start | role | play | ending
+    role: null,
+    stats: {mood:50,money:50,luck:50,crazy:50},
+    step: 0,
+    eventQueue: [],
+    history: [],
+    ending: null
+  };
+
+  const app = $("#app");
+  let typingTimer = null;
+  let onSkipType = null;
+
+  // ====== 本地存档（localStorage 可能不可用，做兜底） ======
+  const store = (() => {
+    const mem = {};
+    let ok = false;
+    try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); ok = true; } catch(e){}
+    return {
+      get(k){ try { return ok ? localStorage.getItem(k) : mem[k]; } catch(e){ return mem[k]; } },
+      set(k,v){ try { if (ok) localStorage.setItem(k,v); else mem[k]=v; } catch(e){ mem[k]=v; } }
+    };
+  })();
+  const SEEN_KEY = "lcr.seen";
+  const UNLOCKED_KEY = "lcr.endings";
+  function getUnlocked(){
+    try { return JSON.parse(store.get(UNLOCKED_KEY) || "[]"); } catch(e){ return []; }
+  }
+  function addUnlocked(rawTitle){
+    const list = getUnlocked();
+    if (list.includes(rawTitle)) return false;
+    list.push(rawTitle);
+    store.set(UNLOCKED_KEY, JSON.stringify(list));
+    return true;
+  }
+
+  // ====== 持久化的 stat 节点（避免重建丢失动画） ======
+  // 每个 view 自己造，这里就不缓存了
+
+  // ====== 视图 ======
+  function mount(node){
+    app.replaceChildren(node);
+  }
+
+  function viewStart(){
+    const unlocked = getUnlocked().length;
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"}, el("span",{},"AI 平行人生生成器"), el("span",{}, unlocked ? `已解锁 ${unlocked} / ${ENDINGS.length} 种结局` : "")),
+      el("h1",{},"《一分钟人生岔路口》"),
+      el("p",{class:"subtitle"},"6 次选择，生成你的一分钟平行人生。随机身份、随机事件、随机地把生活过成段子。"),
+      el("button",{onclick:()=> store.get(SEEN_KEY) ? startRoll() : viewHow() }, "开始人生"),
+      store.get(SEEN_KEY) ? el("button",{class:"ghost", onclick:viewHow},"怎么玩") : null,
+      el("p",{class:"meta"}, "故事打字过程中可点击文字直接跳过")
+    );
+    mount(card);
+  }
+
+  function viewHow(){
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"}, el("span",{},"怎么玩"), el("span",{},"约 1 分钟")),
+      el("h2",{},"三件事就够了"),
+      el("div",{class:"rules"},
+        el("div",{class:"item"}, el("b",{},"① 抽身份"), el("span",{},"系统随机给你一个身份：大学生、社畜、创业者、猫、外星人。")),
+        el("div",{class:"item"}, el("b",{},"② 做 6 次选择"), el("span",{},"每个岔路口两个选项，没有对错。选择会改变你的 4 项属性。")),
+        el("div",{class:"item"}, el("b",{},"③ 看结局"), el("span",{},"最终属性的组合会决定一个荒诞结局。共有 "+ENDINGS.length+" 种，每次都可能不同。"))
+      ),
+      el("div",{class:"rules"},
+        el("div",{class:"item"}, el("b",{},"心态"), el("span",{},"你今天的精神状态。")),
+        el("div",{class:"item"}, el("b",{},"钱包"), el("span",{},"你身上的钱，归零也能继续。")),
+        el("div",{class:"item"}, el("b",{},"运气"), el("span",{},"事情会不会突然朝奇怪方向反转。")),
+        el("div",{class:"item"}, el("b",{},"离谱值"), el("span",{},"故事的荒诞程度，越高越魔幻，没有好坏。"))
+      ),
+      el("button",{onclick:()=>{ store.set(SEEN_KEY,"1"); startRoll(); }}, "我懂了，开始抽签"),
+      el("button",{class:"ghost", onclick:viewStart}, "返回")
+    );
+    mount(card);
+  }
+
+  // 抽签动画
+  function startRoll(){
+    state.view = "role";
+    const names = shuffle(ROLES.map(r=>r.name));
+    // 最终落点
+    const finalRole = pick(ROLES);
+    state.role = finalRole;
+
+    const track = el("div",{class:"track"});
+    // 构造一个长滚动序列，末尾是 finalRole
+    const reelItems = [];
+    for (let i=0;i<10;i++) reelItems.push(pick(names));
+    reelItems.push(finalRole.name);
+    reelItems.forEach(n => track.appendChild(el("div",{},n)));
+
+    const reel = el("div",{class:"reel"}, track);
+
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"}, el("span",{},"命运抽签中…"), el("span",{},"")),
+      reel,
+      el("p",{class:"subtitle",id:"rollDesc"},"正在为你抽取今天的身份。"),
+      el("button",{disabled:"",id:"enterBtn"},"进入人生")
+    );
+    mount(card);
+
+    // 触发滚动动画
+    requestAnimationFrame(()=>{
+      const target = (reelItems.length-1) * 42;
+      track.style.transform = `translateY(-${target}px)`;
+    });
+
+    setTimeout(()=>{
+      // 落定后：把 stats 装上，desc 替换
+      finalizeRoll(finalRole);
+    }, 600);
+  }
+
+  function finalizeRoll(role){
+    state.stats = {...role.stats};
+    state.step = 0;
+    state.eventQueue = shuffle(EVENTS[role.id]).slice(0, TOTAL_STEPS);
+    state.history = [];
+
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"}, el("span",{},"命运抽签完成"), el("span",{},"")),
+      el("div",{class:"role-box"},
+        el("div",{class:"role-name"}, role.name),
+        el("p",{class:"subtitle"}, role.desc)
+      ),
+      el("p",{class:"stat-hint"},"下方是你的起始属性，每次选择都会让它们上下变化（0–100）。"),
+      statsBlock(state.stats),
+      el("button",{onclick:enterPlay},"进入人生"),
+      el("button",{class:"ghost",onclick:startRoll},"换个身份")
+    );
+    mount(card);
+  }
+
+  function statsBlock(stats){
+    const wrap = el("div",{class:"stats"});
+    STAT_KEYS.forEach(k=>{
+      const value = stats[k];
+      wrap.appendChild(
+        el("div",{class:"stat","data-stat":k},
+          el("div",{class:"stat-head"},
+            el("span",{},STAT_LABELS[k]),
+            el("strong",{class:"val"}, String(value))
+          ),
+          el("div",{class:"bar"}, el("span",{style:`width:${value}%`})),
+          el("div",{class:"delta"})
+        )
+      );
+    });
+    return wrap;
+  }
+
+  function updateStatsDOM(root, oldStats, newStats){
+    STAT_KEYS.forEach(k=>{
+      const stat = root.querySelector(`.stat[data-stat="${k}"]`);
+      if (!stat) return;
+      const val = stat.querySelector(".val");
+      const bar = stat.querySelector(".bar > span");
+      const delta = stat.querySelector(".delta");
+      const diff = newStats[k] - oldStats[k];
+      val.textContent = String(newStats[k]);
+      bar.style.width = newStats[k] + "%";
+      if (diff !== 0){
+        delta.className = "delta " + (diff>0?"up":"down");
+        delta.textContent = (diff>0?"+":"") + diff;
+        // 重启动画
+        delta.classList.remove("show");
+        void delta.offsetWidth;
+        delta.classList.add("show");
       }
+    });
+  }
 
-      function pickRandom(items) {
-        return items[Math.floor(Math.random() * items.length)];
-      }
+  function enterPlay(){
+    state.view = "play";
+    state.step = 1;
+    renderPlay();
+  }
 
-      function shuffle(items) {
-        const copy = items.slice();
-        for (let i = copy.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        return copy;
-      }
+  function renderPlay(){
+    const ev = state.eventQueue[state.step-1];
+    const dots = el("div",{class:"dots"});
+    for (let i=1;i<=TOTAL_STEPS;i++){
+      const cls = i < state.step ? "done" : (i === state.step ? "now" : "");
+      dots.appendChild(el("i",{class:cls}));
+    }
 
-      function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-      }
+    const stats = statsBlock(state.stats);
+    const story = el("div",{class:"story typing"},
+      el("span",{class:"text"}),
+      el("span",{class:"caret"}),
+      el("span",{class:"hint"},"点击跳过")
+    );
 
-      function applyEffects(effects) {
-        Object.keys(STAT_LABELS).forEach(key => {
-          state.stats[key] = clamp(state.stats[key] + (effects[key] || 0), 0, 100);
-        });
-      }
+    const choices = el("div",{class:"choices"});
+    ev.choices.forEach((c,i)=>{
+      const btn = el("button",{
+        class: i===1 ? "secondary" : "",
+        disabled: "",
+        onclick: () => onChoose(c, stats, story, choices, ev)
+      }, c.text);
+      choices.appendChild(btn);
+    });
 
-      function startGame() {
-        const role = pickRandom(ROLES);
-        state = freshState();
-        state.view = "role";
-        state.role = role;
-        state.stats = { ...role.stats };
-        state.eventQueue = shuffle(EVENTS[role.id]).slice(0, TOTAL_STEPS);
-        render();
-      }
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"},
+        el("span",{}, `第 ${state.step} / ${TOTAL_STEPS} 步`),
+        el("span",{}, `身份：${state.role.name}`)
+      ),
+      dots,
+      stats,
+      story,
+      choices
+    );
+    mount(card);
 
-      function enterLife() {
-        state.step = 1;
-        state.currentEvent = state.eventQueue[0];
-        state.view = "play";
-        state.locked = false;
-        state.resultText = "";
-        render();
-      }
+    typeText(story, ev.story, () => {
+      choices.querySelectorAll("button").forEach(b => b.disabled = false);
+    });
+  }
 
-      function choose(choice) {
-        if (state.locked) return;
-        state.locked = true;
-        applyEffects(choice.effects);
-        state.resultText = choice.result;
-        state.history.push({
-          story: state.currentEvent.story,
-          choice: choice.text,
-          result: choice.result
-        });
-        render();
+  function typeText(storyNode, text, done){
+    const target = storyNode.querySelector(".text");
+    const caret = storyNode.querySelector(".caret");
+    target.textContent = "";
+    let i = 0;
+    if (typingTimer) clearInterval(typingTimer);
+    const finish = () => {
+      if (typingTimer){ clearInterval(typingTimer); typingTimer = null; }
+      target.textContent = text;
+      caret.style.display = "none";
+      storyNode.classList.remove("typing");
+      storyNode.onclick = null;
+      onSkipType = null;
+      done && done();
+    };
+    onSkipType = finish;
+    storyNode.onclick = () => onSkipType && onSkipType();
+    typingTimer = setInterval(()=>{
+      target.textContent += text[i] || "";
+      i += 1;
+      if (i >= text.length) finish();
+    }, 22);
+  }
 
-        window.setTimeout(() => {
-          if (state.step >= TOTAL_STEPS) {
-            finishGame();
-            return;
-          }
-          state.step += 1;
-          state.currentEvent = state.eventQueue[state.step - 1];
-          state.resultText = "";
-          state.locked = false;
-          render();
-        }, 950);
-      }
+  function onChoose(choice, statsNode, storyNode, choicesNode, ev){
+    // 二次保护
+    if (choicesNode.dataset.locked) return;
+    choicesNode.dataset.locked = "1";
+    choicesNode.querySelectorAll("button").forEach(b => b.disabled = true);
 
-      function finishGame() {
-        state.ending = makeEnding();
-        state.view = "ending";
-        state.locked = false;
-        render();
-      }
+    const oldStats = {...state.stats};
+    const newStats = {...state.stats};
+    STAT_KEYS.forEach(k => newStats[k] = clamp(newStats[k] + (choice.effects[k]||0), 0, 100));
+    state.stats = newStats;
+    state.history.push({ step: state.step, story: ev.story, choice: choice.text, result: choice.result, effects: choice.effects });
 
-      function makeEnding() {
-        const matched = ENDINGS.find(item => item.test(state.stats)) || pickRandom(ENDINGS);
-        const title = roleTitlePrefix(state.role.name, matched.title);
-        return {
-          title,
-          desc: matched.desc,
-          share: `我在《一分钟人生岔路口》里活成了：${title}`
-        };
-      }
+    updateStatsDOM(statsNode, oldStats, newStats);
 
-      function roleTitlePrefix(roleName, title) {
-        if (title.includes(roleName)) return title;
-        return `${roleName}版${title}`;
-      }
+    // 结果框 + 继续按钮（不再自动跳）
+    const result = el("div",{class:"result"}, choice.result);
+    storyNode.after(result);
 
-      function restart() {
-        state = freshState();
-        render();
-      }
-
-      function statsHtml(stats) {
-        return `<div class="stats">${Object.keys(STAT_LABELS).map(key => `
-          <div>
-            <div class="stat-head"><span>${STAT_LABELS[key]}</span><strong>${stats[key]}</strong></div>
-            <div class="bar"><span style="width:${stats[key]}%"></span></div>
-          </div>
-        `).join("")}</div>`;
-      }
-
-      function card(content) {
-        app.innerHTML = `<section class="card">${content}<div class="toast">${state.toast || ""}</div></section>`;
-      }
-
-      function render() {
-        if (state.view === "start") {
-          card(`
-            <div class="topline">AI 平行人生生成器</div>
-            <h1>《一分钟人生岔路口》</h1>
-            <p class="subtitle">6 次选择，生成你的一分钟平行人生。随机身份、随机事件、随机地把生活过成段子。</p>
-            <button id="startBtn">开始人生</button>            
-          `);
-          document.getElementById("startBtn").addEventListener("click", startGame);
-          return;
-        }
-
-        if (state.view === "role") {
-          card(`
-            <div class="topline">命运抽签完成</div>
-            <div class="role-box">
-              <div class="role-name">${state.role.name}</div>
-              <p class="subtitle">${state.role.desc}</p>
-            </div>
-            ${statsHtml(state.stats)}
-            <button id="enterBtn">进入人生</button>
-            <button class="ghost" id="rerollBtn">换个身份</button>
-          `);
-          document.getElementById("enterBtn").addEventListener("click", enterLife);
-          document.getElementById("rerollBtn").addEventListener("click", startGame);
-          return;
-        }
-
-        if (state.view === "play") {
-          const event = state.currentEvent;
-          card(`
-            <div class="topline">第 ${state.step} / ${TOTAL_STEPS} 步 · 当前身份：${state.role.name}</div>
-            ${statsHtml(state.stats)}
-            <div id="storyText" class="story"></div>
-            <div class="choices">
-              ${event.choices.map((choice, index) => `<button class="${index === 1 ? "secondary" : ""}" data-choice="${index}" ${state.locked ? "disabled" : ""}>${choice.text}</button>`).join("")}
-            </div>
-            <div class="result">${state.resultText || "选择后，命运会立刻开始改稿。"}</div>
-          `);
-          typeText(document.getElementById("storyText"), event.story);
-          document.querySelectorAll("[data-choice]").forEach(button => {
-            button.addEventListener("click", () => choose(event.choices[Number(button.dataset.choice)]));
-          });
-          return;
-        }
-
-        card(`
-          <div class="topline">你的平行人生结局</div>
-          <div class="ending-box">
-            <h2>${state.ending.title}</h2>
-            <p class="subtitle" style="margin-top:12px">${state.ending.desc}</p>
-          </div>
-          ${statsHtml(state.stats)}
-          <div id="shareText" class="share">${state.ending.share}</div>
-          <div class="row">
-            <button id="copyBtn">复制分享文案</button>
-            <button class="secondary" id="againBtn">再来一次</button>
-          </div>
-        `);
-        document.getElementById("againBtn").addEventListener("click", restart);
-        document.getElementById("copyBtn").addEventListener("click", copyShare);
-      }
-
-      function typeText(el, text) {
-        el.textContent = "";
-        let index = 0;
-        const timer = window.setInterval(() => {
-          el.textContent += text[index] || "";
-          index += 1;
-          if (index >= text.length) window.clearInterval(timer);
-        }, 18);
-      }
-
-      function copyShare() {
-        const text = state.ending.share;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(() => {
-            state.toast = "分享文案已复制。";
-            render();
-          }).catch(selectShareText);
+    const isLast = state.step >= TOTAL_STEPS;
+    const nextBtn = el("button",{
+      style:"margin-top:4px",
+      onclick: () => {
+        if (isLast) {
+          finishGame();
         } else {
-          selectShareText();
+          state.step += 1;
+          renderPlay();
         }
       }
+    }, isLast ? "看结局" : `继续 →  第 ${state.step+1} / ${TOTAL_STEPS} 步`);
+    // 替换选项区为继续按钮
+    choicesNode.replaceChildren(nextBtn);
+    // 滚动到结果，确保移动端能看到
+    requestAnimationFrame(() => {
+      result.scrollIntoView({behavior:"smooth", block:"center"});
+    });
+  }
 
-      function selectShareText() {
-        const node = document.getElementById("shareText");
-        if (node && window.getSelection) {
-          const range = document.createRange();
-          range.selectNodeContents(node);
-          const selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-        state.toast = "已为你选中文案，可以手动复制。";
-        const toast = document.querySelector(".toast");
-        if (toast) toast.textContent = state.toast;
-      }
+  function finishGame(){
+    state.ending = makeEnding();
+    state.view = "ending";
+    renderEnding();
+  }
 
-      render();
-    })();
-  </script>
+  function makeEnding(){
+    const candidates = ENDINGS.filter(e => e.test(state.stats));
+    let chosen;
+    if (candidates.length){
+      const maxW = Math.max(...candidates.map(c=>c.w));
+      chosen = pick(candidates.filter(c=>c.w===maxW));
+    } else {
+      chosen = pick(ENDINGS);
+    }
+    const title = chosen.title.includes(state.role.name) ? chosen.title : `${state.role.name}版${chosen.title}`;
+    return {
+      title,
+      rawTitle: chosen.title,
+      desc: chosen.desc,
+      share: buildShareText(title)
+    };
+  }
+
+  function buildShareText(title){
+    // 拿一条最戏剧化的历史
+    const highlight = state.history
+      .slice()
+      .sort((a,b)=>{
+        const sum = x => Object.values(x.effects).reduce((s,v)=>s+Math.abs(v),0);
+        return sum(b) - sum(a);
+      })[0];
+    const tail = highlight ? `\n关键时刻：${highlight.choice} → ${highlight.result}` : "";
+    return `我在《一分钟人生岔路口》里活成了：${title}${tail}`;
+  }
+
+  function renderEnding(){
+    // 解锁记录（按未带身份前缀的原始 title）
+    const isNew = addUnlocked(state.ending.rawTitle);
+    const unlocked = getUnlocked().length;
+
+    const recap = el("div",{class:"recap"});
+    state.history.forEach(h=>{
+      recap.appendChild(el("div",{},
+        el("b",{}, String(h.step)),
+        el("span",{}, `${h.choice} — ${h.result}`)
+      ));
+    });
+
+    const shareBox = el("div",{class:"share",id:"shareText"}, state.ending.share);
+    const toast = el("div",{class:"toast"});
+
+    const titleNode = el("h2",{}, state.ending.title);
+    if (isNew) titleNode.appendChild(el("span",{class:"pill"},"✨ 新解锁"));
+
+    const card = el("section",{class:"card"},
+      el("div",{class:"topline"}, el("span",{},"你的平行人生结局"), el("span",{}, `已解锁 ${unlocked} / ${ENDINGS.length}`)),
+      el("div",{class:"ending-box"},
+        titleNode,
+        el("p",{class:"subtitle",style:"margin-top:10px"}, state.ending.desc)
+      ),
+      statsBlock(state.stats),
+      el("details",{},
+        el("summary",{style:"cursor:pointer;color:#536174;font-size:13px;padding:4px 0"},"展开 6 步回顾"),
+        recap
+      ),
+      shareBox,
+      el("div",{class:"row"},
+        el("button",{onclick:()=>copyShare(shareBox, toast)},"复制分享文案"),
+        el("button",{class:"secondary",onclick:resetAll},"再来一次")
+      ),
+      toast
+    );
+    mount(card);
+  }
+
+  function copyShare(node, toast){
+    const text = state.ending.share;
+    const showToast = msg => {
+      toast.textContent = msg;
+      toast.style.opacity = "1";
+      clearTimeout(copyShare._t);
+      copyShare._t = setTimeout(()=>{ toast.style.opacity = "0"; }, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text)
+        .then(()=>showToast("分享文案已复制。"))
+        .catch(()=>{ selectNode(node); showToast("已选中文案，长按复制。"); });
+    } else {
+      selectNode(node);
+      showToast("已选中文案，长按复制。");
+    }
+  }
+
+  function selectNode(node){
+    if (!window.getSelection) return;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function resetAll(){
+    state.view = "start";
+    state.role = null;
+    state.step = 0;
+    state.eventQueue = [];
+    state.history = [];
+    state.ending = null;
+    state.stats = {mood:50,money:50,luck:50,crazy:50};
+    if (typingTimer){ clearInterval(typingTimer); typingTimer = null; }
+    viewStart();
+  }
+
+  // 启动
+  viewStart();
+})();
+</script>
 </body>
 </html>
