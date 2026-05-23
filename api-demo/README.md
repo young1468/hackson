@@ -5,6 +5,7 @@
 ## 特点
 
 - 前端使用原生 HTML/CSS/JS。
+- 前端已同步离线版 Canvas 新界面。
 - 后端使用 Node.js + Express。
 - API Key 只放在后端 `.env` 中。
 - 前端不会暴露 API Key。
