@@ -21,6 +21,14 @@ let modelDisabledUntil = 0;
 
 app.use(cors());
 app.use(express.json({ limit: "64kb" }));
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  res.on("finish", () => {
+    const cost = Date.now() - startedAt;
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} status=${res.statusCode} ${cost}ms`);
+  });
+  next();
+});
 
 const systemPrompt = [
   "Return strict JSON only.",
@@ -63,6 +71,7 @@ app.post("/api/next", async (req, res) => {
     logFallback("next", "请求体校验失败，已返回 fallback。");
     return res.json(getFallbackEvent(req.body && req.body.role, 1, 0));
   }
+  console.log(`[API] /api/next role=${input.role} step=${input.step} history=${input.history.length}`);
 
   const fallback = getFallbackEvent(input.role, input.step, input.history.length);
   if (isModelCoolingDown()) {
@@ -75,7 +84,9 @@ app.post("/api/next", async (req, res) => {
     const raw = await callModelWithRetry(prompt);
     const parsed = parseModelJson(raw);
     rememberModelSuccess();
-    return res.json(normalizeEvent(parsed, input.role, fallback));
+    const event = normalizeEvent(parsed, input.role, fallback);
+    console.log(`[LLM success] route=/api/next scene=${event.scene} story="${event.story.slice(0, 28)}"`);
+    return res.json(event);
   } catch (error) {
     rememberModelFailure();
     logFallback("next", error.message);
@@ -90,6 +101,7 @@ app.post("/api/ending", async (req, res) => {
     logFallback("ending", "请求体校验失败，已返回 fallback。");
     return res.json(fallback);
   }
+  console.log(`[API] /api/ending role=${input.role} history=${input.history.length}`);
 
   if (isModelCoolingDown()) {
     logFallback("ending", `model cooldown active for ${getCooldownSeconds()}s`);
@@ -101,7 +113,9 @@ app.post("/api/ending", async (req, res) => {
     const raw = await callModelWithRetry(prompt);
     const parsed = parseModelJson(raw);
     rememberModelSuccess();
-    return res.json(normalizeEnding(parsed, input.role, fallback));
+    const ending = normalizeEnding(parsed, input.role, fallback);
+    console.log(`[LLM success] route=/api/ending title="${ending.title}"`);
+    return res.json(ending);
   } catch (error) {
     rememberModelFailure();
     logFallback("ending", error.message);
