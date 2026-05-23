@@ -254,20 +254,23 @@
         const splitText = (text, maxW, font) => {
           ctx.save();
           ctx.font = font;
-          const words = text.split("");
           const lines = [];
-          let line = "";
-          for (let i = 0; i < words.length; i++) {
-            const next = line + words[i];
-            const w = ctx.measureText(next).width;
-            if (w > maxW && line) {
-              lines.push(line);
-              line = words[i];
-            } else {
-              line = next;
+          const paragraphs = String(text || "").split("\n");
+          for (const paragraph of paragraphs) {
+            const words = paragraph.split("");
+            let line = "";
+            for (let i = 0; i < words.length; i++) {
+              const next = line + words[i];
+              const w = ctx.measureText(next).width;
+              if (w > maxW && line) {
+                lines.push(line);
+                line = words[i];
+              } else {
+                line = next;
+              }
             }
+            if (line) lines.push(line);
           }
-          if (line) lines.push(line);
           ctx.restore();
           return lines;
         };
@@ -1108,16 +1111,38 @@
 
           const bubbleW = LOGICAL_W * 0.86;
           const bubbleX = (LOGICAL_W - bubbleW) * 0.5;
-          const bubbleY = LOGICAL_H * 0.42;
-          const bubbleH = 214;
+          const hasPrevious = state.history.length && !state.pendingResult;
+          if (hasPrevious) {
+            const prev = state.history[state.history.length - 1].result;
+            const prevY = LOGICAL_H * 0.37;
+            shadow(14, 0.1);
+            roundRect(bubbleX, prevY, bubbleW, 84, 22);
+            ctx.fillStyle = "rgba(255,255,255,.64)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(18,24,38,.56)";
+            ctx.font = styleText(14, 900);
+            ctx.fillText("上一幕", bubbleX + 22, prevY + 27);
+            ctx.font = styleText(16, 800);
+            ctx.fillStyle = "rgba(48,62,88,.82)";
+            const prevLines = splitText(prev, bubbleW - 44, ctx.font);
+            for (let i = 0; i < Math.min(prevLines.length, 2); i++) {
+              ctx.fillText(prevLines[i], bubbleX + 22, prevY + 55 + i * 24);
+            }
+          }
+          const bubbleY = hasPrevious ? LOGICAL_H * 0.46 : LOGICAL_H * 0.42;
+          const bubbleH = hasPrevious ? 190 : 214;
           drawBubble(bubbleX, bubbleY, bubbleW, bubbleH, bubbleX + bubbleW * 0.22);
 
-          ctx.fillStyle = "rgba(18,24,38,.88)";
+          ctx.fillStyle = "rgba(18,24,38,.56)";
+          ctx.font = styleText(15, 900);
+          ctx.fillText("这一幕", bubbleX + 28, bubbleY + 36);
+          ctx.fillStyle = "rgba(18,24,38,.9)";
           ctx.font = styleText(22, 900);
-          const storyText = state.history.length && !state.pendingResult ? `上一幕：${state.history[state.history.length - 1].result}\n${scene.text}` : scene.text;
+          const storyText = scene.text;
           const lines = splitText(storyText, bubbleW - 54, ctx.font);
-          let y = bubbleY + 62;
-          for (let i = 0; i < Math.min(lines.length, 4); i++) {
+          let y = bubbleY + 74;
+          for (let i = 0; i < Math.min(lines.length, hasPrevious ? 3 : 4); i++) {
             ctx.fillText(lines[i], bubbleX + 28, y);
             y += 34;
           }
@@ -1182,12 +1207,15 @@
           const desc = state.ending ? state.ending.desc : "";
           ctx.fillStyle = "rgba(18,24,38,.9)";
           ctx.font = styleText(36, 900);
-          ctx.fillText(title, pad + 20, LOGICAL_H * 0.26);
+          const titleLines = splitText(title, LOGICAL_W - pad * 2 - 40, ctx.font);
+          for (let i = 0; i < Math.min(titleLines.length, 2); i++) {
+            ctx.fillText(titleLines[i], pad + 20, LOGICAL_H * 0.255 + i * 42);
+          }
 
           ctx.font = styleText(18, 800);
           ctx.fillStyle = "rgba(48,62,88,.88)";
           const lines = splitText(desc, LOGICAL_W - pad * 2 - 40, ctx.font);
-          let y = LOGICAL_H * 0.31;
+          let y = LOGICAL_H * 0.31 + (titleLines.length > 1 ? 28 : 0);
           for (let i = 0; i < Math.min(lines.length, 5); i++) {
             ctx.fillText(lines[i], pad + 20, y);
             y += 30;
@@ -1197,18 +1225,20 @@
           const shareX = pad;
           const shareY = LOGICAL_H * 0.64;
           shadow(18, 0.12);
-          roundRect(shareX, shareY, shareW, 108, 26);
+          roundRect(shareX, shareY, shareW, 132, 26);
           ctx.fillStyle = "rgba(255,255,255,.72)";
           ctx.fill();
           clearShadow();
           ctx.fillStyle = "rgba(18,24,38,.88)";
           ctx.font = styleText(16, 900);
           ctx.fillText("分享文案", shareX + 18, shareY + 34);
-          ctx.font = styleText(16, 800);
+          const shareText = state.share || "";
+          ctx.font = styleText(shareText.length > 42 ? 14 : 15, 800);
           ctx.fillStyle = "rgba(48,62,88,.86)";
-          const shareLines = splitText(state.share || "", shareW - 36, ctx.font);
-          const sLine = shareLines.length > 2 ? `${shareLines[0]}${shareLines[1]}` : shareLines.join("");
-          ctx.fillText(sLine, shareX + 18, shareY + 66);
+          const shareLines = splitText(shareText, shareW - 36, ctx.font);
+          for (let i = 0; i < Math.min(shareLines.length, 3); i++) {
+            ctx.fillText(shareLines[i], shareX + 18, shareY + 66 + i * 22);
+          }
 
           const by = LOGICAL_H * 0.8;
           const gap = 16;
