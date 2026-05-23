@@ -38,14 +38,27 @@ cp .env.example .env
 
 ```text
 PORT=3001
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://token-plan-cn.xiaomimimo.com/v1
+LLM_MODEL=mimo-v2.5
 LLM_API_KEY=your_api_key
 ```
 
 注意：`LLM_BASE_URL` 不要包含 `/chat/completions`。
 
 如果不配置 `LLM_API_KEY` 或 `LLM_BASE_URL`，后端会返回本地 fallback 剧情，Demo 仍然可以完整体验。
+
+也可以使用 Anthropic-compatible Messages API：
+
+```text
+PORT=3001
+ANTHROPIC_BASE_URL=https://example.com/anthropic
+ANTHROPIC_AUTH_TOKEN=your_token
+ANTHROPIC_MODEL=mimo-v2.5
+```
+
+注意：`ANTHROPIC_BASE_URL` 不要包含 `/v1/messages`，后端会自动拼接。
+
+如果同时配置了 `LLM_*` 和 `ANTHROPIC_*`，后端优先使用 `LLM_*`。当前项目更推荐 OpenAI-compatible 路径，因为它响应更快，也不会把大量 thinking 内容塞进返回体。
 
 ## 运行前端
 
@@ -97,3 +110,4 @@ const API_BASE = window.API_BASE || "http://localhost:3001";
 - 后端可从 Markdown 包裹内容中提取 JSON。
 - 后端会补齐缺失字段，修正 choices 数量、effects 数值和 scene。
 - 后端不会记录 API Key。
+- 后端返回 fallback 时，会在控制台打印 `[FALLBACK]` 和具体原因。

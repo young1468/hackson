@@ -14,16 +14,20 @@ const ROLE_TO_SCENE = {
   "外星人": "space"
 };
 const STAT_KEYS = ["mood", "money", "luck", "crazy"];
+const MODEL_FAILURE_LIMIT = 2;
+const MODEL_COOLDOWN_MS = 90000;
+let modelFailureCount = 0;
+let modelDisabledUntil = 0;
 
 app.use(cors());
 app.use(express.json({ limit: "64kb" }));
 
 const systemPrompt = [
-  "你是一个荒诞人生互动短剧生成器，必须返回严格 JSON。",
-  "剧情短、轻松、荒诞、有反差，适合社交分享。",
-  "禁止血腥、低俗、违法违规、侵权、政治敏感、未成年人不适宜内容。",
-  "每次只生成一个事件和两个选择。",
-  "不要输出 Markdown，不要输出解释，不要输出 JSON 以外的任何内容。"
+  "Return strict JSON only.",
+  "Put final JSON in message.content.",
+  "No markdown, no explanation, no thinking text.",
+  "Write short, light, absurd Chinese interactive life stories.",
+  "Avoid bloody, vulgar, illegal, infringing, political, or unsafe content."
 ].join("\n");
 
 const fallbackEvents = {
@@ -50,23 +54,31 @@ const fallbackEvents = {
 };
 
 app.get("/health", (req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, provider: getProviderConfig().provider });
 });
 
 app.post("/api/next", async (req, res) => {
   const input = normalizeNextRequest(req.body);
   if (!input.ok) {
-    return res.json(getFallbackEvent(req.body && req.body.role));
+    logFallback("next", "请求体校验失败，已返回 fallback。");
+    return res.json(getFallbackEvent(req.body && req.body.role, 1, 0));
   }
 
-  const fallback = getFallbackEvent(input.role);
+  const fallback = getFallbackEvent(input.role, input.step, input.history.length);
+  if (isModelCoolingDown()) {
+    logFallback("next", `model cooldown active for ${getCooldownSeconds()}s`);
+    return res.json(fallback);
+  }
+
   try {
     const prompt = buildNextPrompt(input);
     const raw = await callModelWithRetry(prompt);
     const parsed = parseModelJson(raw);
+    rememberModelSuccess();
     return res.json(normalizeEvent(parsed, input.role, fallback));
   } catch (error) {
-    console.warn("LLM next unavailable, using fallback:", error.message);
+    rememberModelFailure();
+    logFallback("next", error.message);
     return res.json(fallback);
   }
 });
@@ -75,6 +87,12 @@ app.post("/api/ending", async (req, res) => {
   const input = normalizeEndingRequest(req.body);
   const fallback = getFallbackEnding(req.body && req.body.role, req.body && req.body.stats);
   if (!input.ok) {
+    logFallback("ending", "请求体校验失败，已返回 fallback。");
+    return res.json(fallback);
+  }
+
+  if (isModelCoolingDown()) {
+    logFallback("ending", `model cooldown active for ${getCooldownSeconds()}s`);
     return res.json(fallback);
   }
 
@@ -82,9 +100,11 @@ app.post("/api/ending", async (req, res) => {
     const prompt = buildEndingPrompt(input);
     const raw = await callModelWithRetry(prompt);
     const parsed = parseModelJson(raw);
+    rememberModelSuccess();
     return res.json(normalizeEnding(parsed, input.role, fallback));
   } catch (error) {
-    console.warn("LLM ending unavailable, using fallback:", error.message);
+    rememberModelFailure();
+    logFallback("ending", error.message);
     return res.json(fallback);
   }
 });
@@ -147,90 +167,118 @@ function normalizeHistory(history) {
 }
 
 function buildNextPrompt(input) {
+  const history = input.history.slice(-2);
   return [
-    "请根据当前状态生成下一段互动剧情。",
-    `当前身份：${input.role}`,
-    `当前步数：第 ${input.step} / 6 步`,
-    `当前属性：${JSON.stringify(input.stats)}`,
-    `历史选择：${JSON.stringify(input.history)}`,
-    "生成要求：剧情不超过 60 个中文字符；两个选择都要具体、轻松、荒诞、有反差；结果不超过 50 个中文字符；effects 表示属性变化。",
-    "effects 的 mood、money、luck、crazy 必须是 -25 到 25 之间的数字。",
-    "scene 必须是 student、office、startup、cat、space、city 之一。",
-    "返回 JSON schema：",
-    "{",
-    '  "story": "你刚坐下，测试环境突然炸了。",',
-    '  "choices": [',
-    '    { "text": "先重启服务", "result": "服务暂时好了，但你知道这只是开始。", "effects": { "mood": -10, "money": 0, "luck": -5, "crazy": 10 } },',
-    '    { "text": "说这是缓存问题", "result": "大家沉默了三秒，然后居然信了。", "effects": { "mood": 5, "money": 0, "luck": 10, "crazy": 15 } }',
-    "  ],",
-    '  "scene": "office"',
-    "}"
+    `生成第${input.step}/6步中文互动剧情。`,
+    `身份=${input.role}`,
+    `属性=${JSON.stringify(input.stats)}`,
+    `历史=${JSON.stringify(history)}`,
+    "必须承接历史里最近一次 result，让下一幕像同一段人生继续发展。",
+    "返回一个真实剧情 JSON，不要返回字段说明，不要返回“选项A/选项B/30字内剧情”等占位词。",
+    "JSON 必须只有这些字段：story, choices, scene。",
+    "story 是 20 到 35 字中文剧情。",
+    "choices 必须正好两个，每个包含 text、result、effects。",
+    "effects 包含 mood、money、luck、crazy，数值范围 -20 到 20。",
+    "scene 只能是 student、office、startup、cat、space、city。"
   ].join("\n");
 }
 
 function buildEndingPrompt(input) {
   return [
-    "请根据最终状态生成一个荒诞人生结局。",
-    `当前身份：${input.role}`,
-    `最终属性：${JSON.stringify(input.stats)}`,
-    `历史选择：${JSON.stringify(input.history)}`,
-    "生成要求：标题短、有记忆点；描述 60 到 100 个中文字符；shareText 适合直接复制分享。",
-    "返回 JSON schema：",
-    "{",
-    '  "title": "全靠玄学活下来的打工仙人",',
-    '  "description": "你没有解决所有问题，但每次问题都自己消失了。老板觉得你深不可测，同事觉得你会法术。",',
-    '  "shareText": "我在《一分钟人生岔路口》里活成了：全靠玄学活下来的打工仙人"',
-    "}"
+    "生成中文荒诞人生结局。",
+    `身份=${input.role}`,
+    `最终属性=${JSON.stringify(input.stats)}`,
+    `历史=${JSON.stringify(input.history.slice(-3))}`,
+    "返回一个真实结局 JSON，不要返回字段说明，不要返回“短标题”等占位词。",
+    "JSON 必须只有这些字段：title, description, shareText。",
+    "title 是 6 到 14 字中文标题。",
+    "description 是 50 到 80 字中文结局描述。",
+    "shareText 格式：我在《一分钟人生岔路口》里活成了：加上标题。"
   ].join("\n");
 }
 
 async function callModelWithRetry(userPrompt) {
-  const key = process.env.LLM_API_KEY;
-  const baseUrl = process.env.LLM_BASE_URL;
-  const model = process.env.LLM_MODEL || "gpt-4o-mini";
-  if (!key || !baseUrl) {
-    throw new Error("LLM env not configured");
+  const config = getProviderConfig();
+  if (!config.apiKey || !config.baseUrl) {
+    throw new Error(`${config.provider} 环境变量未配置完整`);
   }
 
   let lastError;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  const timeouts = [12000];
+  for (let attempt = 1; attempt <= timeouts.length; attempt += 1) {
     try {
-      return await callModel({ key, baseUrl, model, userPrompt });
+      return await callModel({ ...config, timeoutMs: timeouts[attempt - 1] }, userPrompt);
     } catch (error) {
       lastError = error;
+      console.warn(`[LLM retry] provider=${config.provider} attempt=${attempt} failed: ${error.message}`);
     }
   }
   throw lastError;
 }
 
-async function callModel({ key, baseUrl, model, userPrompt }) {
+function getProviderConfig() {
+  if (process.env.LLM_API_KEY || process.env.LLM_BASE_URL) {
+    return {
+      provider: "openai",
+      baseUrl: process.env.LLM_BASE_URL,
+      apiKey: process.env.LLM_API_KEY,
+      model: process.env.LLM_MODEL || "mimo-v2.5"
+    };
+  }
+
+  if (process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_BASE_URL) {
+    return {
+      provider: "anthropic",
+      baseUrl: process.env.ANTHROPIC_BASE_URL,
+      apiKey: process.env.ANTHROPIC_AUTH_TOKEN,
+      model: process.env.ANTHROPIC_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-3-5-sonnet-latest"
+    };
+  }
+
+  return {
+    provider: "openai",
+    baseUrl: process.env.LLM_BASE_URL,
+    apiKey: process.env.LLM_API_KEY,
+    model: process.env.LLM_MODEL || "gpt-4o-mini"
+  };
+}
+
+async function callModel(config, userPrompt) {
+  if (config.provider === "anthropic") {
+    return callAnthropic(config, userPrompt);
+  }
+  return callOpenAICompatible(config, userPrompt);
+}
+
+async function callOpenAICompatible(config, userPrompt) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 7000);
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs || 7000);
   try {
-    const response = await fetch(`${trimTrailingSlash(baseUrl)}/chat/completions`, {
+    const response = await fetch(buildOpenAIUrl(config.baseUrl), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
+        "Authorization": `Bearer ${config.apiKey}`
       },
       body: JSON.stringify({
-        model,
+        model: config.model,
+        max_tokens: 600,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.85,
+        temperature: 0.55,
         response_format: { type: "json_object" }
       }),
       signal: controller.signal
     });
     if (!response.ok) {
-      throw new Error(`LLM status ${response.status}`);
+      throw new Error(`OpenAI-compatible status ${response.status}: ${await safeResponseText(response)}`);
     }
     const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content;
+    const content = extractOpenAIText(data);
     if (typeof content !== "string" || !content.trim()) {
-      throw new Error("LLM empty content");
+      throw new Error(`OpenAI-compatible empty content: ${JSON.stringify(data).slice(0, 300)}`);
     }
     return content;
   } finally {
@@ -238,14 +286,109 @@ async function callModel({ key, baseUrl, model, userPrompt }) {
   }
 }
 
-function parseModelJson(content) {
-  try {
-    return JSON.parse(content);
-  } catch (error) {
-    const jsonText = extractJsonObject(content);
-    if (!jsonText) throw error;
-    return JSON.parse(jsonText);
+function extractOpenAIText(data) {
+  const message = data?.choices?.[0]?.message;
+  if (typeof message?.content === "string" && message.content.trim()) {
+    return message.content.trim();
   }
+  if (typeof data?.choices?.[0]?.text === "string" && data.choices[0].text.trim()) {
+    return data.choices[0].text.trim();
+  }
+  return "";
+}
+
+async function callAnthropic(config, userPrompt) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs || 7000);
+  try {
+    const response = await fetch(buildAnthropicUrl(config.baseUrl), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": config.apiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: config.model,
+        max_tokens: 600,
+        temperature: 0.55,
+        system: systemPrompt,
+        messages: [
+          { role: "user", content: userPrompt }
+        ]
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`Anthropic status ${response.status}: ${await safeResponseText(response)}`);
+    }
+    const data = await response.json();
+    const content = extractAnthropicText(data);
+    if (!content) {
+      throw new Error(`Anthropic empty content: ${JSON.stringify(data).slice(0, 300)}`);
+    }
+    return content;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function normalizeAnthropicPrefill(content) {
+  const clean = String(content || "").trim();
+  if (!clean) return "";
+  if (clean.startsWith("{") || clean.startsWith("```")) return clean;
+  return `{${clean}`;
+}
+
+function extractAnthropicText(data) {
+  if (typeof data?.content === "string") return data.content.trim();
+  if (typeof data?.completion === "string") return data.completion.trim();
+  if (typeof data?.message?.content === "string") return data.message.content.trim();
+  if (Array.isArray(data?.message?.content)) {
+    const text = data.message.content
+      .filter(item => item && typeof item.text === "string")
+      .map(item => item.text)
+      .join("\n")
+      .trim();
+    if (text) return text;
+  }
+  if (typeof data?.choices?.[0]?.message?.content === "string") {
+    return data.choices[0].message.content.trim();
+  }
+  if (!Array.isArray(data?.content)) return "";
+  return data.content
+    .filter(item => item && typeof item.text === "string")
+    .map(item => item.text)
+    .join("\n")
+    .trim();
+}
+
+async function safeResponseText(response) {
+  try {
+    const text = await response.text();
+    return text.slice(0, 300);
+  } catch (error) {
+    return "无法读取错误响应";
+  }
+}
+
+function parseModelJson(content) {
+  const candidates = [
+    content,
+    stripMarkdownFence(content),
+    extractJsonObject(content),
+    repairTrailingBraces(stripMarkdownFence(content))
+  ].filter(Boolean);
+
+  let lastError;
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(`Model JSON parse failed: ${lastError?.message || "unknown"}; preview=${String(content).slice(0, 300)}`);
 }
 
 function extractJsonObject(text) {
@@ -253,6 +396,48 @@ function extractJsonObject(text) {
   const last = text.lastIndexOf("}");
   if (first === -1 || last === -1 || last <= first) return "";
   return text.slice(first, last + 1);
+}
+
+function stripMarkdownFence(text) {
+  const clean = String(text || "").trim();
+  return clean
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function repairTrailingBraces(text) {
+  const clean = String(text || "").trim();
+  const first = clean.indexOf("{");
+  if (first === -1) return "";
+  const candidate = clean.slice(first);
+  const missing = countMissingClosingBraces(candidate);
+  if (missing <= 0 || missing > 4) return "";
+  return `${candidate}${"}".repeat(missing)}`;
+}
+
+function countMissingClosingBraces(text) {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (const char of text) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === "{") depth += 1;
+    if (char === "}") depth -= 1;
+  }
+  return depth;
 }
 
 function normalizeEvent(value, role, fallback) {
@@ -293,9 +478,23 @@ function normalizeEnding(value, role, fallback) {
   };
 }
 
-function getFallbackEvent(role) {
-  const list = fallbackEvents[role] || fallbackEvents["社畜"];
-  return list[Math.floor(Math.random() * list.length)];
+function getFallbackEvent(role, step = 1, historyLength = 0) {
+  const baseList = fallbackEvents[role] || fallbackEvents["社畜"];
+  const list = baseList.concat(makeQuickFallbackEvents(role));
+  const seed = Number.isFinite(Number(step)) ? Number(step) - 1 : Number(historyLength) || 0;
+  const index = Math.abs(seed) % list.length;
+  return list[index];
+}
+
+function makeQuickFallbackEvents(role) {
+  const cleanRole = typeof role === "string" && role.trim() ? role.trim() : "玩家";
+  const scene = ROLE_TO_SCENE[cleanRole] || "city";
+  return [
+    fallbackEvent(`命运生成器短暂打了个喷嚏，${cleanRole}的下一幕先由本地剧本接管。`, "顺势点头", "你假装一切都在计划内，场面居然稳定了。", { mood: 4, money: 0, luck: 4, crazy: 6 }, "认真观察", "你发现命运只是加载慢了点，并没有真的离开。", { mood: 2, money: 0, luck: 6, crazy: 3 }, scene),
+    fallbackEvent(`${cleanRole}收到一张写着“今日剧情临时改道”的便签。`, "沿着便签走", "你绕开了拥堵的命运，捡到一点意外好运。", { mood: 6, money: 0, luck: 8, crazy: 5 }, "把便签收好", "你获得了纪念品，虽然不知道能不能报销。", { mood: 4, money: 2, luck: 2, crazy: 7 }, scene),
+    fallbackEvent(`系统提示：大模型正在思考人生，${cleanRole}需要先自己发挥。`, "临场发挥", "你发挥得很像那么回事，旁边的人开始鼓掌。", { mood: 8, money: 0, luck: 5, crazy: 8 }, "选择低调", "你低调到命运差点没找到你，但这也算一种安全。", { mood: 3, money: 0, luck: 4, crazy: -2 }, scene),
+    fallbackEvent(`${cleanRole}面前出现两个按钮，其中一个写着“别慌”。`, "按下别慌", "按钮亮了，空气也跟着冷静三秒。", { mood: 9, money: 0, luck: 3, crazy: 3 }, "按另一个", "另一个按钮播放了掌声，你决定接受鼓励。", { mood: 5, money: 0, luck: 5, crazy: 9 }, scene)
+  ];
 }
 
 function getFallbackEnding(role, stats) {
@@ -310,6 +509,31 @@ function getFallbackEnding(role, stats) {
     description: "大模型暂时离线，但你的人生仍然完成了生成。六次选择之后，命运决定先给你一个稳定又好笑的兜底结局。",
     shareText: `我在《一分钟人生岔路口》里活成了：${title}`
   };
+}
+
+function logFallback(type, reason) {
+  console.warn(`[FALLBACK] route=/api/${type} reason="${reason}" action="using local fallback"`);
+}
+
+function isModelCoolingDown() {
+  return Date.now() < modelDisabledUntil;
+}
+
+function getCooldownSeconds() {
+  return Math.ceil(Math.max(0, modelDisabledUntil - Date.now()) / 1000);
+}
+
+function rememberModelSuccess() {
+  modelFailureCount = 0;
+  modelDisabledUntil = 0;
+}
+
+function rememberModelFailure() {
+  modelFailureCount += 1;
+  if (modelFailureCount >= MODEL_FAILURE_LIMIT) {
+    modelDisabledUntil = Date.now() + MODEL_COOLDOWN_MS;
+    console.warn(`[LLM cooldown] disabled model calls for ${MODEL_COOLDOWN_MS / 1000}s after ${modelFailureCount} consecutive failures`);
+  }
 }
 
 function defaultStats() {
@@ -329,6 +553,21 @@ function trimTrailingSlash(value) {
   return String(value).replace(/\/+$/, "");
 }
 
+function buildOpenAIUrl(baseUrl) {
+  const clean = trimTrailingSlash(baseUrl);
+  if (clean.endsWith("/chat/completions")) return clean;
+  return `${clean}/chat/completions`;
+}
+
+function buildAnthropicUrl(baseUrl) {
+  const clean = trimTrailingSlash(baseUrl);
+  if (clean.endsWith("/v1/messages")) return clean;
+  if (clean.endsWith("/v1")) return `${clean}/messages`;
+  return `${clean}/v1/messages`;
+}
+
 app.listen(PORT, () => {
+  const config = getProviderConfig();
   console.log(`Life Crossroads API demo server listening on http://localhost:${PORT}`);
+  console.log(`LLM provider=${config.provider}, model=${config.model}, baseUrl=${config.baseUrl || "未配置"}`);
 });

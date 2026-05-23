@@ -89,6 +89,17 @@
       font-size: 15px;
       line-height: 1.55;
     }
+    .result-pop {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(43, 179, 163, .26);
+      border-radius: 8px;
+      background: #f2fbf8;
+      box-shadow: 0 10px 24px rgba(43, 179, 163, .12);
+    }
+    .result-pop strong { font-size: 17px; }
+    .result-pop p { color: #263247; line-height: 1.6; }
     .row { display: flex; gap: 10px; }
     .row button { flex: 1; }
     .share {
@@ -249,21 +260,28 @@
           result: choice.result
         });
         render();
+      }
 
-        window.setTimeout(async () => {
-          if (state.step >= TOTAL_STEPS) {
-            await finishGame();
-            return;
-          }
-          state.step += 1;
-          state.resultText = "";
-          state.loading = true;
-          render();
-          state.currentEvent = await getNextEvent();
-          state.loading = false;
-          state.locked = false;
-          render();
-        }, 650);
+      async function continueAfterResult() {
+        if (!state.resultText || state.loading) return;
+        if (state.step >= TOTAL_STEPS) {
+          await finishGame();
+          return;
+        }
+        state.step += 1;
+        state.resultText = "";
+        state.loading = true;
+        render();
+        state.currentEvent = await getNextEvent();
+        state.loading = false;
+        state.locked = false;
+        render();
+      }
+
+      function storyWithBridge(story) {
+        if (!state.history.length || state.resultText) return story;
+        const last = state.history[state.history.length - 1];
+        return `上一幕：${last.result}\n\n${story}`;
       }
 
       async function getNextEvent() {
@@ -385,13 +403,21 @@
             <div class="choices">
               ${event && !state.loading ? event.choices.map((choice, index) => `<button class="${index === 1 ? "secondary" : ""}" data-choice="${index}" ${state.locked ? "disabled" : ""}>${choice.text}</button>`).join("") : ""}
             </div>
-            <div class="result">${state.resultText || "选择后，命运会立刻开始改稿。"}</div>
+            ${state.resultText ? `
+              <div class="result-pop">
+                <strong>这一选择带来的结果</strong>
+                <p>${state.resultText}</p>
+                <button id="continueBtn">${state.step >= TOTAL_STEPS ? "查看结局" : "确定，进入下一幕"}</button>
+              </div>
+            ` : `<div class="result">选择后会先显示结果，你确认后再进入下一幕。</div>`}
           `);
           if (event && !state.loading) {
-            typeText(document.getElementById("storyText"), event.story);
+            typeText(document.getElementById("storyText"), storyWithBridge(event.story));
             document.querySelectorAll("[data-choice]").forEach(button => {
               button.addEventListener("click", () => choose(event.choices[Number(button.dataset.choice)]));
             });
+            const continueBtn = document.getElementById("continueBtn");
+            if (continueBtn) continueBtn.addEventListener("click", continueAfterResult);
           }
           return;
         }
