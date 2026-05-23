@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>一分钟人生模拟</title>
+  <style>
+    :root{
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; height:100%; overflow:hidden; background:#0b1020; }
+    body{
+      font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+      color:#10162a;
+      touch-action:none;
+    }
+    #wrap{
+      width:100vw;
+      height:100vh;
+      position:relative;
+      padding:var(--sat) var(--sar) var(--sab) var(--sal);
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      border-radius:20px;
+      background:#0b1020;
+    }
+    #fatal{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      color:#1a243a;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255, 210, 99, .55), transparent 44%),
+        radial-gradient(circle at 85% 22%, rgba(82, 209, 196, .42), transparent 48%),
+        linear-gradient(160deg, #fbf1d8 0%, #e8faf6 48%, #f5e3ef 100%);
+    }
+    #fatal .card{
+      width:min(420px, 100%);
+      padding:18px 18px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.86);
+      border:1px solid rgba(18,24,38,.14);
+      box-shadow:0 18px 55px rgba(20, 28, 48, .18);
+      backdrop-filter: blur(10px);
+    }
+    #fatal h1{
+      margin:0 0 8px;
+      font-size:22px;
+      letter-spacing:.2px;
+    }
+    #fatal p{
+      margin:0;
+      font-size:16px;
+      line-height:1.7;
+      color:#33425f;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="c" aria-label="一分钟人生模拟 Canvas"></canvas>
+    <div id="fatal" role="alert" aria-live="assertive">
+      <div class="card">
+        <h1>哎呀，出错了</h1>
+        <p>哎呀，出错了，请重启试试吧~</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    (() => {
+      "use strict";
+      const ERROR_TEXT = "哎呀，出错了，请重启试试吧~";
+      try {
+        const LOGICAL_W = 750;
+        const LOGICAL_H = 1334;
+        const TOTAL_STEPS = 7;
+        const STORAGE_KEY = "minute-life-sim.bestRecord.v1";
+        const canvas = document.getElementById("c");
+        const fatal = document.getElementById("fatal");
+        const wrap = document.getElementById("wrap");
+        const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+        if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+        const STATS = [
+          { key: "mood", label: "心态", c0: "#37cbbf", c1: "#7be9e1" },
+          { key: "money", label: "钱包", c0: "#f5b340", c1: "#ffe6a3" },
+          { key: "luck", label: "运气", c0: "#4d84ff", c1: "#a9c3ff" },
+          { key: "energy", label: "体力", c0: "#ff5d79", c1: "#ffb5c2" }
+        ];
+
+        const ROLES = [
+          { id: "student", name: "大学生", badge: "赶 ddl 的", palette: { a: "#ffb703", b: "#8ecae6", hair: "#2a2f45", skin: "#ffd7c2" }, base: { mood: 62, money: 38, luck: 55, energy: 58 }, portrait: { hair: "short", acc: "book" } },
+          { id: "office", name: "社畜", badge: "会开会的", palette: { a: "#ffd166", b: "#06d6a0", hair: "#1c2338", skin: "#ffd2b5" }, base: { mood: 50, money: 60, luck: 46, energy: 44 }, portrait: { hair: "side", acc: "tie" } },
+          { id: "freelance", name: "自由职业者", badge: "很自律的(吧)", palette: { a: "#ff8fab", b: "#bde0fe", hair: "#3b2f2f", skin: "#ffe0c8" }, base: { mood: 66, money: 46, luck: 52, energy: 62 }, portrait: { hair: "bun", acc: "laptop" } },
+          { id: "pet", name: "铲屎官", badge: "被猫支配的", palette: { a: "#b8f2e6", b: "#ffa69e", hair: "#2b2b3a", skin: "#ffe0cc" }, base: { mood: 70, money: 40, luck: 60, energy: 55 }, portrait: { hair: "wave", acc: "paw" } },
+          { id: "athlete", name: "运动员", badge: "今天也要燃", palette: { a: "#52b788", b: "#f7c948", hair: "#1d2234", skin: "#ffd6bf" }, base: { mood: 58, money: 44, luck: 48, energy: 78 }, portrait: { hair: "cap", acc: "band" } },
+          { id: "explorer", name: "探险家", badge: "地图是玄学", palette: { a: "#fca311", b: "#90e0ef", hair: "#252634", skin: "#ffd6c7" }, base: { mood: 60, money: 42, luck: 70, energy: 56 }, portrait: { hair: "messy", acc: "compass" } }
+        ];
+
+        const SCENES = [
+          { id: "wake", bg: { type: "room", time: "morning" }, text: "闹钟响了三次，你终于醒来。今天的人生，似乎只允许你做 7 个决定。", choices: [
+            { text: "立刻起床，认真开始", result: "你像点了加速键一样清醒，世界也跟着更顺滑。", delta: { mood: 6, energy: 6, luck: 2 } },
+            { text: "再躺 3 分钟", result: "你赢得了 3 分钟，但失去了 6 分钟的勇气。", delta: { mood: -2, energy: 4, luck: -2 } }
+          ]},
+          { id: "breakfast", bg: { type: "street", time: "morning" }, text: "早餐摊的香味像路灯一样照亮你。你摸了摸口袋，发现钱包在装可怜。", choices: [
+            { text: "买最爱那份", result: "幸福从第一口开始，钱包从第一口流泪。", delta: { mood: 10, money: -10, energy: 6 } },
+            { text: "只买豆浆", result: "朴素也很高级，尤其当你把它说得很高级。", delta: { mood: 3, money: -3, energy: 4 } }
+          ]},
+          { id: "bus", bg: { type: "city", time: "day" }, text: "通勤路上，人群像一股认真生活的潮水。你看见一个空位，离你三步远。", choices: [
+            { text: "冲刺坐下", result: "你坐下了，但坐得像在参加短跑决赛。", delta: { mood: 4, energy: 2, luck: 3 } },
+            { text: "礼让给别人", result: "你收获了一句谢谢，和更稳的心态。", delta: { mood: 8, energy: -2, luck: 4 } }
+          ]},
+          { id: "work", bg: { type: "office", time: "day" }, text: "屏幕弹出一条消息：『这个需求很简单』。你听见命运在轻轻捂嘴笑。", choices: [
+            { text: "说：没问题", result: "你说完这句，需求立刻开始自我繁殖。", delta: { mood: -10, energy: -6, luck: -2 } },
+            { text: "说：我评估下", result: "你获得了一小段神圣的缓冲期，像在口袋里藏了一块盾牌。", delta: { mood: 6, energy: -2, luck: 6 } }
+          ]},
+          { id: "lunch", bg: { type: "cafe", time: "day" }, text: "午饭时间到了，菜单上写着：『加鸡腿 +8 快乐』。你的胃点头，你的钱包摇头。", choices: [
+            { text: "加鸡腿", result: "快乐很真实，鸡腿也很真实。", delta: { mood: 12, money: -8, energy: 8 } },
+            { text: "保持克制", result: "你赢得了理性，但理性不负责让你开心。", delta: { mood: -2, money: 4, luck: 2 } }
+          ]},
+          { id: "friend", bg: { type: "park", time: "sunset" }, text: "朋友发来消息：『来散步吗？』你看了看电量一样的体力，犹豫了。", choices: [
+            { text: "去！", result: "晚风把你吹成更柔软的人，顺便把霉运吹走一点点。", delta: { mood: 10, energy: -4, luck: 8 } },
+            { text: "不去，躺平", result: "你很安静，安静到好运也不知道该不该敲门。", delta: { mood: 3, energy: 8, luck: -4 } }
+          ]},
+          { id: "deal", bg: { type: "nightMarket", time: "night" }, text: "夜市里有一个抽奖摊：『抽一次，命运立刻改稿』。你觉得这话很像你的人生。", choices: [
+            { text: "抽！", result: "你抽到了“很会活”的小奖，也抽到了“别乱花钱”的大智慧。", delta: { mood: 8, money: -6, luck: 10 } },
+            { text: "不抽，稳住", result: "你把运气留给更重要的事，比如明天。", delta: { mood: 5, money: 6, luck: -2 } }
+          ]},
+          { id: "random1", bg: { type: "roof", time: "night" }, text: "你站在天台边缘，看城市的灯像一碗会发光的糖。脑子突然冒出一个念头：要不要立个小目标？", choices: [
+            { text: "立个目标", result: "目标不大，但它让你走路都带点方向感。", delta: { mood: 8, energy: 4, luck: 3 } },
+            { text: "算了，先活着", result: "你把今天稳稳放好，这也是一种很高的能力。", delta: { mood: 6, energy: 6 } }
+          ]},
+          { id: "random2", bg: { type: "library", time: "evening" }, text: "你路过一家书店，门口写着：『今日推荐：不焦虑指南』。你觉得这书可能不便宜。", choices: [
+            { text: "进去翻翻", result: "你看了两页，焦虑先停了一下，像被礼貌地劝退。", delta: { mood: 10, money: -2, luck: 2 } },
+            { text: "快步离开", result: "你假装没看见，但心里默默记下了标题。", delta: { mood: 2, money: 2, energy: 2 } }
+          ]},
+          { id: "random3", bg: { type: "home", time: "night" }, text: "回到家，你发现地板上有一个小盒子。你不记得自己买过它，但它看起来很想被打开。", choices: [
+            { text: "打开", result: "里面是一张写着“你很棒”的纸。你怀疑是过去的自己寄来的。", delta: { mood: 12, luck: 4 } },
+            { text: "不打开", result: "你决定把神秘留给明天，顺便给自己留点期待。", delta: { mood: 6, energy: 4, luck: 2 } }
+          ]}
+        ];
+
+        const ENDINGS = [
+          { id: "glow", title: "一边忙一边发光的人", desc: "你没有躲开生活的波动，但你学会了用自己的节奏把它们放回正确的位置。", test: s => s.mood >= 78 && s.energy >= 58 },
+          { id: "richMood", title: "余额不多但很会开心的人", desc: "你把快乐花得很认真：该吃的吃，该走的走，钱包偶尔皱眉，但心态一直在线。", test: s => s.mood >= 72 && s.money <= 38 },
+          { id: "steady", title: "低调稳定的小英雄", desc: "你不靠爆发取胜，你靠稳定赢下今天。你的生活像一条很靠谱的路，走着走着就有风景。", test: s => s.mood >= 60 && s.money >= 52 && s.luck >= 52 && s.energy >= 52 },
+          { id: "lucky", title: "全靠好运补丁的幸运体质", desc: "每次你觉得要翻车，命运都会临时给你贴一个补丁。你不知道为什么，但你接受并继续前进。", test: s => s.luck >= 82 },
+          { id: "tired", title: "努力生活但需要充电的人", desc: "你做对了很多决定，只是体力没跟上。没关系，先睡一觉，世界会稍微温柔点。", test: s => s.energy <= 28 && s.mood >= 55 },
+          { id: "chaos", title: "把人生过成段子的离谱艺术家", desc: "你做的选择都很有戏，生活也很配合。你可能不富，但你永远有故事。", test: s => s.luck >= 55 && s.mood >= 55 && s.money <= 45 },
+          { id: "plain", title: "把今天稳稳放好的人", desc: "你没有惊天动地，但你把今天收拾得很干净。明天会更容易。", test: _ => true }
+        ];
+
+        const rand = (a, b) => a + Math.random() * (b - a);
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        const shuffle = items => {
+          const out = items.slice();
+          for (let i = out.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [out[i], out[j]] = [out[j], out[i]];
+          }
+          return out;
+        };
+
+        const safe = { t: 0, r: 0, b: 0, l: 0 };
+        const readSafe = () => {
+          const cs = getComputedStyle(document.documentElement);
+          const px = k => parseFloat(cs.getPropertyValue(k)) || 0;
+          safe.t = px("--sat");
+          safe.r = px("--sar");
+          safe.b = px("--sab");
+          safe.l = px("--sal");
+        };
+
+        let dpr = Math.min(2, window.devicePixelRatio || 1);
+        let viewW = 0;
+        let viewH = 0;
+        let scale = 1;
+        let ox = 0;
+        let oy = 0;
+
+        const noise = document.createElement("canvas");
+        const nctx = noise.getContext("2d");
+        const makeNoise = () => {
+          noise.width = 220;
+          noise.height = 220;
+          const img = nctx.createImageData(noise.width, noise.height);
+          for (let i = 0; i < img.data.length; i += 4) {
+            const v = (Math.random() * 255) | 0;
+            img.data[i] = v;
+            img.data[i + 1] = v;
+            img.data[i + 2] = v;
+            img.data[i + 3] = 18;
+          }
+          nctx.putImageData(img, 0, 0);
+        };
+
+        const shadow = (blur, alpha) => {
+          ctx.shadowColor = `rgba(12, 16, 30, ${alpha})`;
+          ctx.shadowBlur = blur;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = Math.max(2, Math.round(blur * 0.25));
+        };
+        const clearShadow = () => {
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        };
+
+        const roundRect = (x, y, w, h, r) => {
+          const rr = Math.min(r, w * 0.5, h * 0.5);
+          ctx.beginPath();
+          ctx.moveTo(x + rr, y);
+          ctx.arcTo(x + w, y, x + w, y + h, rr);
+          ctx.arcTo(x + w, y + h, x, y + h, rr);
+          ctx.arcTo(x, y + h, x, y, rr);
+          ctx.arcTo(x, y, x + w, y, rr);
+          ctx.closePath();
+        };
+
+        const splitText = (text, maxW, font) => {
+          ctx.save();
+          ctx.font = font;
+          const words = text.split("");
+          const lines = [];
+          let line = "";
+          for (let i = 0; i < words.length; i++) {
+            const next = line + words[i];
+            const w = ctx.measureText(next).width;
+            if (w > maxW && line) {
+              lines.push(line);
+              line = words[i];
+            } else {
+              line = next;
+            }
+          }
+          if (line) lines.push(line);
+          ctx.restore();
+          return lines;
+        };
+
+        const btns = [];
+        const hitTest = (x, y) => {
+          for (let i = btns.length - 1; i >= 0; i--) {
+            const b = btns[i];
+            if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b;
+          }
+          return null;
+        };
+
+        const audio = { ctx: null, master: null };
+        const ensureAudio = () => {
+          if (audio.ctx) return;
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          audio.ctx = new AC();
+          audio.master = audio.ctx.createGain();
+          audio.master.gain.value = 0.08;
+          audio.master.connect(audio.ctx.destination);
+        };
+        const beep = (freq, dur, type) => {
+          if (!audio.ctx || !audio.master) return;
+          const t0 = audio.ctx.currentTime;
+          const o = audio.ctx.createOscillator();
+          const g = audio.ctx.createGain();
+          o.type = type || "sine";
+          o.frequency.setValueAtTime(freq, t0);
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          o.connect(g);
+          g.connect(audio.master);
+          o.start(t0);
+          o.stop(t0 + dur + 0.02);
+        };
+
+        const nowMs = () => performance.now();
+
+        const store = {
+          bestScore: 0,
+          bestTitle: "",
+          bestAt: 0
+        };
+        const loadStore = () => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.bestScore === "number") store.bestScore = parsed.bestScore;
+            if (parsed && typeof parsed.bestTitle === "string") store.bestTitle = parsed.bestTitle;
+            if (parsed && typeof parsed.bestAt === "number") store.bestAt = parsed.bestAt;
+          } catch (_) {}
+        };
+        const saveStore = () => {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+          } catch (_) {}
+        };
+
+        const state = {
+          view: "start",
+          role: null,
+          step: 0,
+          steps: [],
+          stats: { mood: 50, money: 50, luck: 50, energy: 50 },
+          history: [],
+          toast: "",
+          toastAt: 0,
+          animAt: 0,
+          sparkles: [],
+          ending: null,
+          share: "",
+          locked: false
+        };
+
+        const freshRun = () => {
+          const role = pick(ROLES);
+          const pool = shuffle(SCENES).slice(0, TOTAL_STEPS);
+          state.view = "play";
+          state.role = role;
+          state.step = 0;
+          state.steps = pool;
+          state.stats = { ...role.base };
+          state.history = [];
+          state.toast = "";
+          state.toastAt = 0;
+          state.animAt = nowMs();
+          state.ending = null;
+          state.share = "";
+          state.locked = false;
+        };
+
+        const addSpark = (x, y, n) => {
+          for (let i = 0; i < n; i++) {
+            state.sparkles.push({
+              x,
+              y,
+              vx: rand(-0.7, 0.7),
+              vy: rand(-1.6, -0.3),
+              r: rand(1.2, 3.6),
+              life: rand(420, 780),
+              born: nowMs(),
+              hue: rand(28, 190)
+            });
+          }
+        };
+
+        const applyDelta = delta => {
+          for (const item of STATS) {
+            const k = item.key;
+            const v = typeof delta[k] === "number" ? delta[k] : 0;
+            state.stats[k] = clamp(state.stats[k] + v, 0, 100);
+          }
+        };
+
+        const choose = idx => {
+          if (state.locked) return;
+          const scene = state.steps[state.step];
+          const choice = scene.choices[idx];
+          state.locked = true;
+          ensureAudio();
+          if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
+          beep(idx === 0 ? 520 : 430, 0.09, "triangle");
+          applyDelta(choice.delta || {});
+          state.history.push({ sceneId: scene.id, text: scene.text, choice: choice.text, result: choice.result });
+          state.toast = choice.result;
+          state.toastAt = nowMs();
+          state.animAt = nowMs();
+          addSpark(LOGICAL_W * 0.5, LOGICAL_H * 0.78, 22);
+          window.setTimeout(() => {
+            if (state.view !== "play") return;
+            state.step += 1;
+            state.locked = false;
+            state.toast = "";
+            if (state.step >= TOTAL_STEPS) finish();
+          }, 920);
+        };
+
+        const scoreNow = () => {
+          return Math.round((state.stats.mood * 1.2 + state.stats.money * 0.8 + state.stats.luck * 1.1 + state.stats.energy * 0.9) / 4 * 100);
+        };
+
+        const finish = () => {
+          const s = state.stats;
+          const ending = ENDINGS.find(e => e.test(s)) || ENDINGS[ENDINGS.length - 1];
+          state.ending = ending;
+          state.view = "ending";
+          state.animAt = nowMs();
+          const sc = scoreNow();
+          const sum = `心态${s.mood} / 钱包${s.money} / 运气${s.luck} / 体力${s.energy}`;
+          state.share = `我在《一分钟人生模拟》里活成了：${ending.title}（${sum}）`;
+          if (sc > store.bestScore) {
+            store.bestScore = sc;
+            store.bestTitle = ending.title;
+            store.bestAt = Date.now();
+            saveStore();
+          }
+          ensureAudio();
+          beep(640, 0.11, "sine");
+          window.setTimeout(() => beep(820, 0.09, "sine"), 90);
+          window.setTimeout(() => beep(1040, 0.08, "sine"), 170);
+        };
+
+        const copyShare = () => {
+          ensureAudio();
+          beep(720, 0.06, "square");
+          const text = state.share || "";
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+              state.toast = "分享文案已复制。";
+              state.toastAt = nowMs();
+            }).catch(() => {
+              state.toast = "复制失败了，你可以长按截图分享。";
+              state.toastAt = nowMs();
+            });
+          } else {
+            state.toast = "你的浏览器不支持一键复制，可以长按截图分享。";
+            state.toastAt = nowMs();
+          }
+        };
+
+        const styleText = (size, weight) => {
+          const w = weight ? `${weight} ` : "";
+          return `${w}${size}px "PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei",sans-serif`;
+        };
+
+        const toLogical = (px, py) => {
+          const x = (px * dpr - ox) / scale;
+          const y = (py * dpr - oy) / scale;
+          return { x, y };
+        };
+
+        const resize = () => {
+          readSafe();
+          dpr = Math.min(2, window.devicePixelRatio || 1);
+          const rect = wrap.getBoundingClientRect();
+          viewW = Math.max(1, Math.floor(rect.width));
+          viewH = Math.max(1, Math.floor(rect.height));
+          canvas.width = Math.floor(viewW * dpr);
+          canvas.height = Math.floor(viewH * dpr);
+          const s = Math.min(canvas.width / LOGICAL_W, canvas.height / LOGICAL_H);
+          scale = s;
+          ox = Math.floor((canvas.width - LOGICAL_W * scale) * 0.5);
+          oy = Math.floor((canvas.height - LOGICAL_H * scale) * 0.5);
+          ctx.imageSmoothingEnabled = true;
+          ctx.textBaseline = "alphabetic";
+        };
+
+        const bgGrad = (spec, t) => {
+          const g = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+          const tw = (spec.time || "day");
+          if (tw === "morning") {
+            g.addColorStop(0, "#fff1c9");
+            g.addColorStop(0.45, "#c8f3ff");
+            g.addColorStop(1, "#fff6ef");
+          } else if (tw === "sunset") {
+            g.addColorStop(0, "#ffd1dc");
+            g.addColorStop(0.55, "#bde0fe");
+            g.addColorStop(1, "#f7f0ff");
+          } else if (tw === "evening") {
+            g.addColorStop(0, "#bde0fe");
+            g.addColorStop(0.55, "#ffd6a5");
+            g.addColorStop(1, "#f9f6ff");
+          } else if (tw === "night") {
+            g.addColorStop(0, "#0b1020");
+            g.addColorStop(0.55, "#17214b");
+            g.addColorStop(1, "#07111f");
+          } else {
+            g.addColorStop(0, "#f7f0ff");
+            g.addColorStop(0.48, "#dff9fb");
+            g.addColorStop(1, "#fff6e8");
+          }
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+          const pulse = 0.6 + 0.4 * Math.sin(t * 0.00075);
+          ctx.globalAlpha = 0.52;
+          const g2 = ctx.createRadialGradient(LOGICAL_W * 0.22, LOGICAL_H * 0.2, 0, LOGICAL_W * 0.22, LOGICAL_H * 0.2, LOGICAL_W * 0.55);
+          g2.addColorStop(0, `rgba(255, 209, 102, ${0.48 * pulse})`);
+          g2.addColorStop(1, "rgba(255, 209, 102, 0)");
+          ctx.fillStyle = g2;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+          const g3 = ctx.createRadialGradient(LOGICAL_W * 0.84, LOGICAL_H * 0.18, 0, LOGICAL_W * 0.84, LOGICAL_H * 0.18, LOGICAL_W * 0.6);
+          g3.addColorStop(0, `rgba(79, 209, 197, ${0.38 * pulse})`);
+          g3.addColorStop(1, "rgba(79, 209, 197, 0)");
+          ctx.fillStyle = g3;
+          ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.globalAlpha = 1;
+        };
+
+        const drawCloud = (x, y, s, alpha) => {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = "rgba(255,255,255,.92)";
+          ctx.beginPath();
+          ctx.ellipse(x, y, 38 * s, 26 * s, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + 36 * s, y - 10 * s, 34 * s, 24 * s, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + 70 * s, y, 42 * s, 28 * s, 0, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        };
+
+        const sceneDecor = (spec, t) => {
+          const type = spec.type || "city";
+          const tt = (t * 0.00007) % 1;
+          if (type === "room" || type === "home") {
+            ctx.save();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "rgba(18,24,38,.06)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.12);
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.64, LOGICAL_W * 0.84, LOGICAL_H * 0.3, 26);
+            ctx.fillStyle = "rgba(255,255,255,.65)";
+            ctx.fill();
+            clearShadow();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = "rgba(255, 255, 255, .55)";
+            roundRect(LOGICAL_W * 0.12, LOGICAL_H * 0.69, LOGICAL_W * 0.22, LOGICAL_H * 0.12, 20);
+            ctx.fill();
+            ctx.fillStyle = "rgba(255, 214, 165, .55)";
+            roundRect(LOGICAL_W * 0.38, LOGICAL_H * 0.68, LOGICAL_W * 0.5, LOGICAL_H * 0.16, 22);
+            ctx.fill();
+            ctx.fillStyle = "rgba(82, 209, 196, .35)";
+            roundRect(LOGICAL_W * 0.14, LOGICAL_H * 0.84, LOGICAL_W * 0.72, LOGICAL_H * 0.08, 999);
+            ctx.fill();
+            ctx.restore();
+          } else if (type === "park") {
+            ctx.save();
+            ctx.fillStyle = "rgba(16, 170, 120, .16)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.5, LOGICAL_H * 0.86, LOGICAL_W * 0.62, LOGICAL_H * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(16, 170, 120, .26)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.24, LOGICAL_H * 0.9, LOGICAL_W * 0.3, LOGICAL_H * 0.13, 0, 0, Math.PI * 2);
+            ctx.ellipse(LOGICAL_W * 0.78, LOGICAL_H * 0.9, LOGICAL_W * 0.35, LOGICAL_H * 0.14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            shadow(12, 0.1);
+            ctx.fillStyle = "rgba(255,255,255,.74)";
+            roundRect(LOGICAL_W * 0.58, LOGICAL_H * 0.66, LOGICAL_W * 0.28, LOGICAL_H * 0.1, 18);
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(255, 214, 165, .55)";
+            roundRect(LOGICAL_W * 0.6, LOGICAL_H * 0.7, LOGICAL_W * 0.24, LOGICAL_H * 0.02, 999);
+            ctx.fill();
+            drawCloud(LOGICAL_W * (0.2 + 0.22 * tt), LOGICAL_H * 0.18, 1.05, 0.8);
+            drawCloud(LOGICAL_W * (0.62 - 0.22 * tt), LOGICAL_H * 0.24, 0.9, 0.7);
+            ctx.restore();
+          } else if (type === "cafe" || type === "nightMarket") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18, 24, 38, .08)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.14);
+            roundRect(LOGICAL_W * 0.06, LOGICAL_H * 0.66, LOGICAL_W * 0.88, LOGICAL_H * 0.26, 26);
+            ctx.fillStyle = "rgba(255,255,255,.62)";
+            ctx.fill();
+            clearShadow();
+            const bulbs = 10;
+            for (let i = 0; i < bulbs; i++) {
+              const x = LOGICAL_W * 0.12 + i * (LOGICAL_W * 0.76 / (bulbs - 1));
+              const y = LOGICAL_H * 0.16 + 10 * Math.sin(t * 0.002 + i);
+              ctx.fillStyle = `hsla(${38 + i * 12}, 95%, 70%, .9)`;
+              ctx.beginPath();
+              ctx.arc(x, y, 7, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.restore();
+          } else if (type === "office") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18,24,38,.08)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.16);
+            roundRect(LOGICAL_W * 0.09, LOGICAL_H * 0.66, LOGICAL_W * 0.82, LOGICAL_H * 0.22, 26);
+            ctx.fillStyle = "rgba(255,255,255,.64)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(77, 132, 255, .18)";
+            roundRect(LOGICAL_W * 0.15, LOGICAL_H * 0.69, LOGICAL_W * 0.42, LOGICAL_H * 0.12, 20);
+            ctx.fill();
+            ctx.fillStyle = "rgba(255, 209, 102, .2)";
+            roundRect(LOGICAL_W * 0.6, LOGICAL_H * 0.7, LOGICAL_W * 0.18, LOGICAL_H * 0.1, 18);
+            ctx.fill();
+            ctx.restore();
+          } else if (type === "library") {
+            ctx.save();
+            ctx.fillStyle = "rgba(18,24,38,.06)";
+            ctx.fillRect(0, LOGICAL_H * 0.62, LOGICAL_W, LOGICAL_H * 0.38);
+            shadow(18, 0.12);
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.66, LOGICAL_W * 0.84, LOGICAL_H * 0.26, 26);
+            ctx.fillStyle = "rgba(255,255,255,.66)";
+            ctx.fill();
+            clearShadow();
+            for (let i = 0; i < 6; i++) {
+              ctx.fillStyle = `rgba(${60 + i * 18}, ${90 + i * 14}, ${130 + i * 9}, .18)`;
+              roundRect(LOGICAL_W * (0.12 + i * 0.12), LOGICAL_H * 0.69, LOGICAL_W * 0.09, LOGICAL_H * 0.18, 16);
+              ctx.fill();
+            }
+            ctx.restore();
+          } else if (type === "roof") {
+            ctx.save();
+            ctx.fillStyle = "rgba(255,255,255,.08)";
+            ctx.beginPath();
+            ctx.ellipse(LOGICAL_W * 0.5, LOGICAL_H * 0.78, LOGICAL_W * 0.72, LOGICAL_H * 0.24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            for (let i = 0; i < 22; i++) {
+              const x = (i / 21) * LOGICAL_W;
+              const y = LOGICAL_H * 0.58 + 10 * Math.sin(i * 1.3 + t * 0.002);
+              ctx.fillStyle = `rgba(255, 209, 102, ${0.08 + 0.04 * Math.sin(i + t * 0.003)})`;
+              ctx.fillRect(x, y, 18, 160);
+            }
+            ctx.restore();
+          } else {
+            ctx.save();
+            drawCloud(LOGICAL_W * (0.24 + 0.2 * tt), LOGICAL_H * 0.18, 1.05, 0.78);
+            drawCloud(LOGICAL_W * (0.68 - 0.2 * tt), LOGICAL_H * 0.26, 0.92, 0.7);
+            ctx.fillStyle = "rgba(18,24,38,.05)";
+            ctx.fillRect(0, LOGICAL_H * 0.66, LOGICAL_W, LOGICAL_H * 0.34);
+            shadow(14, 0.1);
+            ctx.fillStyle = "rgba(255,255,255,.7)";
+            roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.69, LOGICAL_W * 0.2, LOGICAL_H * 0.18, 22);
+            ctx.fill();
+            roundRect(LOGICAL_W * 0.32, LOGICAL_H * 0.68, LOGICAL_W * 0.22, LOGICAL_H * 0.2, 22);
+            ctx.fill();
+            roundRect(LOGICAL_W * 0.58, LOGICAL_H * 0.7, LOGICAL_W * 0.28, LOGICAL_H * 0.16, 22);
+            ctx.fill();
+            clearShadow();
+            ctx.restore();
+          }
+        };
+
+        const portraitCache = new Map();
+        const portraitKey = role => `${role.id}`;
+
+        const drawPortraitTo = (role, size) => {
+          const c = document.createElement("canvas");
+          c.width = size;
+          c.height = size;
+          const g = c.getContext("2d");
+          const rr = (x, y, w, h, r) => {
+            const rad = Math.min(r, w * 0.5, h * 0.5);
+            g.beginPath();
+            g.moveTo(x + rad, y);
+            g.arcTo(x + w, y, x + w, y + h, rad);
+            g.arcTo(x + w, y + h, x, y + h, rad);
+            g.arcTo(x, y + h, x, y, rad);
+            g.arcTo(x, y, x + w, y, rad);
+            g.closePath();
+          };
+          const p = role.palette;
+          const cx = size * 0.5;
+          const cy = size * 0.52;
+          const headR = size * 0.34;
+          const bg = g.createLinearGradient(0, 0, size, size);
+          bg.addColorStop(0, p.b);
+          bg.addColorStop(1, p.a);
+          g.fillStyle = bg;
+          g.fillRect(0, 0, size, size);
+          g.fillStyle = "rgba(255,255,255,.2)";
+          g.beginPath();
+          g.ellipse(size * 0.75, size * 0.28, size * 0.28, size * 0.2, -0.4, 0, Math.PI * 2);
+          g.fill();
+
+          g.save();
+          g.shadowColor = "rgba(0,0,0,.18)";
+          g.shadowBlur = size * 0.08;
+          g.shadowOffsetY = size * 0.05;
+          g.fillStyle = "rgba(255,255,255,.64)";
+          g.beginPath();
+          g.arc(cx, cy, headR * 1.12, 0, Math.PI * 2);
+          g.fill();
+          g.restore();
+
+          g.fillStyle = p.skin;
+          g.beginPath();
+          g.arc(cx, cy, headR, 0, Math.PI * 2);
+          g.fill();
+
+          const hair = role.portrait.hair;
+          g.fillStyle = p.hair;
+          g.beginPath();
+          if (hair === "short") {
+            g.arc(cx, cy - headR * 0.22, headR * 1.02, Math.PI * 1.05, Math.PI * 1.95);
+          } else if (hair === "side") {
+            g.ellipse(cx - headR * 0.18, cy - headR * 0.34, headR * 1.06, headR * 0.86, -0.25, Math.PI, Math.PI * 2);
+          } else if (hair === "bun") {
+            g.arc(cx, cy - headR * 0.38, headR * 1.0, Math.PI, Math.PI * 2);
+            g.moveTo(cx, cy - headR * 1.06);
+            g.arc(cx, cy - headR * 1.06, headR * 0.34, 0, Math.PI * 2);
+          } else if (hair === "wave") {
+            g.arc(cx, cy - headR * 0.22, headR * 1.04, Math.PI * 1.05, Math.PI * 1.95);
+            g.ellipse(cx - headR * 0.48, cy + headR * 0.05, headR * 0.2, headR * 0.64, 0.1, 0, Math.PI * 2);
+            g.ellipse(cx + headR * 0.48, cy + headR * 0.05, headR * 0.2, headR * 0.64, -0.1, 0, Math.PI * 2);
+          } else if (hair === "cap") {
+            g.arc(cx, cy - headR * 0.42, headR * 1.0, Math.PI, 0);
+            g.rect(cx - headR * 1.0, cy - headR * 0.42, headR * 2.0, headR * 0.46);
+          } else {
+            g.arc(cx, cy - headR * 0.28, headR * 1.02, Math.PI * 1.04, Math.PI * 1.96);
+          }
+          g.closePath();
+          g.fill();
+
+          const eyeY = cy - headR * 0.02;
+          const eyeX = headR * 0.42;
+          g.fillStyle = "rgba(18,24,38,.9)";
+          g.beginPath();
+          g.ellipse(cx - eyeX, eyeY, headR * 0.12, headR * 0.16, 0, 0, Math.PI * 2);
+          g.ellipse(cx + eyeX, eyeY, headR * 0.12, headR * 0.16, 0, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = "rgba(255,255,255,.85)";
+          g.beginPath();
+          g.arc(cx - eyeX + headR * 0.05, eyeY - headR * 0.05, headR * 0.05, 0, Math.PI * 2);
+          g.arc(cx + eyeX + headR * 0.05, eyeY - headR * 0.05, headR * 0.05, 0, Math.PI * 2);
+          g.fill();
+
+          g.strokeStyle = "rgba(18,24,38,.7)";
+          g.lineWidth = Math.max(2, size * 0.015);
+          g.lineCap = "round";
+          g.beginPath();
+          g.moveTo(cx - headR * 0.16, cy + headR * 0.32);
+          g.quadraticCurveTo(cx, cy + headR * 0.4, cx + headR * 0.16, cy + headR * 0.32);
+          g.stroke();
+
+          const acc = role.portrait.acc;
+          if (acc === "book") {
+            g.save();
+            g.translate(cx + headR * 0.62, cy + headR * 0.5);
+            g.rotate(-0.18);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.fillRect(-size * 0.16, -size * 0.08, size * 0.28, size * 0.18);
+            g.fillStyle = "rgba(18,24,38,.18)";
+            g.fillRect(-size * 0.12, -size * 0.04, size * 0.2, size * 0.02);
+            g.restore();
+          } else if (acc === "tie") {
+            g.save();
+            g.translate(cx, cy + headR * 0.9);
+            g.fillStyle = "rgba(6, 214, 160, .9)";
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.lineTo(-headR * 0.18, headR * 0.3);
+            g.lineTo(0, headR * 0.48);
+            g.lineTo(headR * 0.18, headR * 0.3);
+            g.closePath();
+            g.fill();
+            g.restore();
+          } else if (acc === "laptop") {
+            g.save();
+            g.translate(cx - headR * 0.9, cy + headR * 0.75);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            rr(0, 0, headR * 0.9, headR * 0.56, headR * 0.12);
+            g.fill();
+            g.fillStyle = "rgba(18,24,38,.16)";
+            rr(headR * 0.08, headR * 0.08, headR * 0.74, headR * 0.32, headR * 0.08);
+            g.fill();
+            g.restore();
+          } else if (acc === "paw") {
+            g.save();
+            g.translate(cx + headR * 0.72, cy + headR * 0.52);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.beginPath();
+            g.arc(0, 0, headR * 0.22, 0, Math.PI * 2);
+            g.arc(-headR * 0.18, -headR * 0.2, headR * 0.1, 0, Math.PI * 2);
+            g.arc(headR * 0.18, -headR * 0.2, headR * 0.1, 0, Math.PI * 2);
+            g.arc(0, -headR * 0.28, headR * 0.1, 0, Math.PI * 2);
+            g.fill();
+            g.restore();
+          } else if (acc === "band") {
+            g.save();
+            g.strokeStyle = "rgba(255, 209, 102, .9)";
+            g.lineWidth = size * 0.06;
+            g.lineCap = "round";
+            g.beginPath();
+            g.arc(cx, cy - headR * 0.66, headR * 0.86, Math.PI * 1.1, Math.PI * 1.9);
+            g.stroke();
+            g.restore();
+          } else if (acc === "compass") {
+            g.save();
+            g.translate(cx - headR * 0.86, cy + headR * 0.55);
+            g.fillStyle = "rgba(255,255,255,.78)";
+            g.beginPath();
+            g.arc(0, 0, headR * 0.22, 0, Math.PI * 2);
+            g.fill();
+            g.strokeStyle = "rgba(18,24,38,.45)";
+            g.lineWidth = Math.max(2, size * 0.01);
+            g.beginPath();
+            g.moveTo(0, -headR * 0.14);
+            g.lineTo(0, headR * 0.14);
+            g.moveTo(-headR * 0.14, 0);
+            g.lineTo(headR * 0.14, 0);
+            g.stroke();
+            g.restore();
+          }
+
+          g.save();
+          g.globalAlpha = 0.18;
+          g.fillStyle = "rgba(0,0,0,1)";
+          g.fillRect(0, 0, size, size);
+          g.globalCompositeOperation = "screen";
+          g.globalAlpha = 0.28;
+          g.drawImage(noise, 0, 0, size, size);
+          g.restore();
+          return c;
+        };
+
+        const getPortrait = role => {
+          const key = portraitKey(role);
+          if (portraitCache.has(key)) return portraitCache.get(key);
+          const c = drawPortraitTo(role, 240);
+          portraitCache.set(key, c);
+          return c;
+        };
+
+        const drawTopBar = (t) => {
+          const pad = 22;
+          const h = 116;
+          shadow(16, 0.14);
+          roundRect(pad, pad, LOGICAL_W - pad * 2, h, 24);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+
+          ctx.fillStyle = "rgba(18,24,38,.78)";
+          ctx.font = styleText(22, 900);
+          ctx.fillText("一分钟人生模拟", pad + 20, pad + 44);
+          ctx.font = styleText(16, 700);
+          const stepText = state.view === "play" ? `第 ${Math.min(state.step + 1, TOTAL_STEPS)} / ${TOTAL_STEPS} 步 · ${state.role.name}` : `${state.role ? state.role.name : ""}`;
+          ctx.fillStyle = "rgba(48, 62, 88, .8)";
+          ctx.fillText(stepText, pad + 20, pad + 72);
+
+          const statX0 = pad + 20;
+          const statY0 = pad + 82;
+          const gap = 10;
+          const itemW = (LOGICAL_W - pad * 2 - 40 - gap * 3) / 4;
+          for (let i = 0; i < STATS.length; i++) {
+            const it = STATS[i];
+            const x = statX0 + i * (itemW + gap);
+            const v = state.stats[it.key];
+            ctx.fillStyle = "rgba(18,24,38,.55)";
+            ctx.font = styleText(12, 800);
+            ctx.fillText(it.label, x, statY0 + 14);
+            ctx.font = styleText(12, 900);
+            ctx.textAlign = "right";
+            ctx.fillText(String(v), x + itemW, statY0 + 14);
+            ctx.textAlign = "left";
+            roundRect(x, statY0 + 22, itemW, 10, 999);
+            ctx.fillStyle = "rgba(18,24,38,.09)";
+            ctx.fill();
+            roundRect(x, statY0 + 22, itemW * (v / 100), 10, 999);
+            const g = ctx.createLinearGradient(x, 0, x + itemW, 0);
+            g.addColorStop(0, it.c0);
+            g.addColorStop(1, it.c1);
+            ctx.fillStyle = g;
+            ctx.fill();
+          }
+        };
+
+        const drawBubble = (x, y, w, h, tipX) => {
+          shadow(18, 0.16);
+          roundRect(x, y, w, h, 26);
+          ctx.fillStyle = "rgba(255,255,255,.86)";
+          ctx.fill();
+          clearShadow();
+          ctx.beginPath();
+          ctx.moveTo(tipX, y + h);
+          ctx.lineTo(tipX + 22, y + h);
+          ctx.lineTo(tipX + 6, y + h + 22);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(255,255,255,.86)";
+          ctx.fill();
+        };
+
+        const drawButton = (b, label, variant, disabled, t) => {
+          const press = b.down ? 1 : 0;
+          const lift = 1 - press;
+          const x = b.x;
+          const y = b.y + press * 4;
+          const w = b.w;
+          const h = b.h;
+          const r = 22;
+          const base = variant === "primary" ? "#ffd166" : variant === "mint" ? "#b8f2e6" : "#e9eef7";
+          const top = variant === "primary" ? "#ffe6a3" : variant === "mint" ? "#e6fff9" : "#f6f8fc";
+          const textC = variant === "ghost" ? "rgba(18,24,38,.82)" : "rgba(18,24,38,.88)";
+          const alpha = disabled ? 0.55 : 1;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          shadow(18, 0.18 * lift);
+          roundRect(x, y, w, h, r);
+          const g = ctx.createLinearGradient(x, y, x, y + h);
+          g.addColorStop(0, top);
+          g.addColorStop(1, base);
+          ctx.fillStyle = g;
+          ctx.fill();
+          clearShadow();
+
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgba(18,24,38,.08)";
+          roundRect(x + 1, y + 1, w - 2, h - 2, r - 1);
+          ctx.stroke();
+
+          ctx.fillStyle = textC;
+          ctx.font = styleText(24, 900);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const wobble = b.hot ? 1 + 0.02 * Math.sin(t * 0.014) : 1;
+          ctx.save();
+          ctx.translate(x + w * 0.5, y + h * 0.5);
+          ctx.scale(wobble, wobble);
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          ctx.restore();
+        };
+
+        const drawToast = (t) => {
+          if (!state.toast) return;
+          const age = nowMs() - state.toastAt;
+          const dur = 1400;
+          const alpha = age < 260 ? age / 260 : age > dur ? 0 : age > dur - 360 ? (dur - age) / 360 : 1;
+          if (alpha <= 0) return;
+          const w = LOGICAL_W * 0.84;
+          const x = (LOGICAL_W - w) * 0.5;
+          const y = LOGICAL_H * 0.61;
+          shadow(22, 0.18);
+          roundRect(x, y, w, 86, 22);
+          ctx.fillStyle = `rgba(18,24,38,${0.78 * alpha})`;
+          ctx.fill();
+          clearShadow();
+          ctx.fillStyle = `rgba(255,255,255,${0.95 * alpha})`;
+          ctx.font = styleText(18, 800);
+          const lines = splitText(state.toast, w - 36, ctx.font);
+          const line = lines.length > 1 ? lines.slice(0, 2).join(" ") : lines[0];
+          ctx.fillText(line, x + 18, y + 52);
+        };
+
+        const drawSparkles = (t) => {
+          if (!state.sparkles.length) return;
+          const alive = [];
+          for (const s of state.sparkles) {
+            const age = t - s.born;
+            if (age > s.life) continue;
+            const k = age / s.life;
+            const x = s.x + s.vx * age;
+            const y = s.y + s.vy * age + 0.0014 * age * age;
+            const a = (1 - k) * 0.85;
+            ctx.fillStyle = `hsla(${s.hue}, 92%, 70%, ${a})`;
+            ctx.beginPath();
+            ctx.arc(x, y, s.r * (1 - k * 0.4), 0, Math.PI * 2);
+            ctx.fill();
+            alive.push(s);
+          }
+          state.sparkles = alive;
+        };
+
+        const drawStart = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "start", time: "day" }, t);
+          sceneDecor({ type: "city", time: "day" }, t);
+
+          const cx = LOGICAL_W * 0.5;
+          const cy = LOGICAL_H * 0.34;
+          ctx.save();
+          shadow(28, 0.18);
+          roundRect(LOGICAL_W * 0.08, LOGICAL_H * 0.18, LOGICAL_W * 0.84, LOGICAL_H * 0.34, 30);
+          ctx.fillStyle = "rgba(255,255,255,.78)";
+          ctx.fill();
+          clearShadow();
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(54, 900);
+          ctx.textAlign = "center";
+          ctx.fillText("一分钟人生模拟", cx, LOGICAL_H * 0.28);
+
+          ctx.font = styleText(20, 800);
+          ctx.fillStyle = "rgba(48,62,88,.85)";
+          ctx.fillText("7 次点击，走完你的一段可爱卡通人生。", cx, LOGICAL_H * 0.34);
+          ctx.font = styleText(16, 700);
+          ctx.fillStyle = "rgba(66,82,110,.75)";
+          ctx.fillText("纯离线运行 · 无外链 · 无网络请求", cx, LOGICAL_H * 0.38);
+          ctx.textAlign = "left";
+
+          const b = { id: "start", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.58, w: LOGICAL_W * 0.72, h: 94, down: false, hot: false };
+          btns.push(b);
+          drawButton(b, "开始人生", "primary", false, t);
+
+          const b2 = { id: "how", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.7, w: LOGICAL_W * 0.72, h: 84, down: false, hot: false };
+          btns.push(b2);
+          drawButton(b2, "玩法说明", "ghost", false, t);
+
+          if (store.bestScore > 0) {
+            const w = LOGICAL_W * 0.84;
+            const x = (LOGICAL_W - w) * 0.5;
+            const y = LOGICAL_H * 0.82;
+            shadow(16, 0.12);
+            roundRect(x, y, w, 92, 22);
+            ctx.fillStyle = "rgba(255,255,255,.72)";
+            ctx.fill();
+            clearShadow();
+            ctx.fillStyle = "rgba(18,24,38,.84)";
+            ctx.font = styleText(16, 900);
+            ctx.fillText("最高纪录", x + 18, y + 38);
+            ctx.font = styleText(16, 800);
+            ctx.fillStyle = "rgba(48,62,88,.85)";
+            ctx.fillText(`${store.bestScore} 分 · ${store.bestTitle || "已记录"}`, x + 18, y + 66);
+          }
+        };
+
+        const drawHow = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "start", time: "evening" }, t);
+          sceneDecor({ type: "library", time: "evening" }, t);
+          const pad = 26;
+          shadow(24, 0.16);
+          roundRect(pad, LOGICAL_H * 0.16, LOGICAL_W - pad * 2, LOGICAL_H * 0.56, 30);
+          ctx.fillStyle = "rgba(255,255,255,.82)";
+          ctx.fill();
+          clearShadow();
+
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(36, 900);
+          ctx.fillText("玩法说明", pad + 20, LOGICAL_H * 0.22);
+          ctx.font = styleText(18, 800);
+          ctx.fillStyle = "rgba(48,62,88,.86)";
+          const text = "每局随机身份与 7 个场景。\n每一步只有两个选项：点一下就会出现结果，并改变你的属性。\n最后根据属性生成结局，并支持复制分享文案。\n\n小提示：横屏也能玩，但竖屏更舒服。";
+          const lines = text.split("\n");
+          let y = LOGICAL_H * 0.27;
+          for (const line of lines) {
+            ctx.fillText(line, pad + 20, y);
+            y += 30;
+          }
+
+          const b = { id: "back", x: LOGICAL_W * 0.14, y: LOGICAL_H * 0.76, w: LOGICAL_W * 0.72, h: 88, down: false, hot: false };
+          btns.push(b);
+          drawButton(b, "返回", "mint", false, t);
+        };
+
+        const drawPlay = (t) => {
+          btns.length = 0;
+          const scene = state.steps[state.step];
+          bgGrad(scene.bg, t);
+          sceneDecor(scene.bg, t);
+          drawTopBar(t);
+
+          const portrait = getPortrait(state.role);
+          const pSize = 176;
+          const px = LOGICAL_W * 0.72;
+          const py = LOGICAL_H * 0.16;
+          shadow(20, 0.18);
+          roundRect(px, py, pSize, pSize, 24);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+          ctx.save();
+          ctx.beginPath();
+          roundRect(px + 8, py + 8, pSize - 16, pSize - 16, 18);
+          ctx.clip();
+          ctx.drawImage(portrait, px + 8, py + 8, pSize - 16, pSize - 16);
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(18,24,38,.84)";
+          ctx.font = styleText(16, 900);
+          ctx.fillText(state.role.badge, px, py + pSize + 28);
+
+          const bubbleW = LOGICAL_W * 0.86;
+          const bubbleX = (LOGICAL_W - bubbleW) * 0.5;
+          const bubbleY = LOGICAL_H * 0.42;
+          const bubbleH = 214;
+          drawBubble(bubbleX, bubbleY, bubbleW, bubbleH, bubbleX + bubbleW * 0.22);
+
+          ctx.fillStyle = "rgba(18,24,38,.88)";
+          ctx.font = styleText(22, 900);
+          const lines = splitText(scene.text, bubbleW - 54, ctx.font);
+          let y = bubbleY + 62;
+          for (let i = 0; i < Math.min(lines.length, 4); i++) {
+            ctx.fillText(lines[i], bubbleX + 28, y);
+            y += 34;
+          }
+
+          const by = LOGICAL_H * 0.72;
+          const gap = 16;
+          const bw = (LOGICAL_W * 0.86 - gap) * 0.5;
+          const bx0 = (LOGICAL_W - (bw * 2 + gap)) * 0.5;
+          const b1 = { id: "c0", x: bx0, y: by, w: bw, h: 112, down: false, hot: false, disabled: state.locked };
+          const b2 = { id: "c1", x: bx0 + bw + gap, y: by, w: bw, h: 112, down: false, hot: false, disabled: state.locked };
+          btns.push(b1, b2);
+          drawButton(b1, scene.choices[0].text, "primary", state.locked, t);
+          drawButton(b2, scene.choices[1].text, "mint", state.locked, t);
+
+          drawToast(t);
+          drawSparkles(t);
+
+          ctx.save();
+          ctx.globalAlpha = 0.22;
+          ctx.globalCompositeOperation = "overlay";
+          ctx.drawImage(noise, 0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.restore();
+        };
+
+        const drawEnding = (t) => {
+          btns.length = 0;
+          bgGrad({ type: "ending", time: "sunset" }, t);
+          sceneDecor({ type: "roof", time: "sunset" }, t);
+          drawTopBar(t);
+
+          const pad = 26;
+          shadow(22, 0.16);
+          roundRect(pad, LOGICAL_H * 0.2, LOGICAL_W - pad * 2, LOGICAL_H * 0.42, 30);
+          ctx.fillStyle = "rgba(255,255,255,.82)";
+          ctx.fill();
+          clearShadow();
+
+          const title = state.ending ? state.ending.title : "结局";
+          const desc = state.ending ? state.ending.desc : "";
+          ctx.fillStyle = "rgba(18,24,38,.9)";
+          ctx.font = styleText(36, 900);
+          ctx.fillText(title, pad + 20, LOGICAL_H * 0.26);
+
+          ctx.font = styleText(18, 800);
+          ctx.fillStyle = "rgba(48,62,88,.88)";
+          const lines = splitText(desc, LOGICAL_W - pad * 2 - 40, ctx.font);
+          let y = LOGICAL_H * 0.31;
+          for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            ctx.fillText(lines[i], pad + 20, y);
+            y += 30;
+          }
+
+          const shareW = LOGICAL_W - pad * 2;
+          const shareX = pad;
+          const shareY = LOGICAL_H * 0.64;
+          shadow(18, 0.12);
+          roundRect(shareX, shareY, shareW, 108, 26);
+          ctx.fillStyle = "rgba(255,255,255,.72)";
+          ctx.fill();
+          clearShadow();
+          ctx.fillStyle = "rgba(18,24,38,.88)";
+          ctx.font = styleText(16, 900);
+          ctx.fillText("分享文案", shareX + 18, shareY + 34);
+          ctx.font = styleText(16, 800);
+          ctx.fillStyle = "rgba(48,62,88,.86)";
+          const shareLines = splitText(state.share || "", shareW - 36, ctx.font);
+          const sLine = shareLines.length > 2 ? `${shareLines[0]}${shareLines[1]}` : shareLines.join("");
+          ctx.fillText(sLine, shareX + 18, shareY + 66);
+
+          const by = LOGICAL_H * 0.8;
+          const gap = 16;
+          const bw = (LOGICAL_W * 0.86 - gap) * 0.5;
+          const bx0 = (LOGICAL_W - (bw * 2 + gap)) * 0.5;
+          const b1 = { id: "copy", x: bx0, y: by, w: bw, h: 104, down: false, hot: false };
+          const b2 = { id: "again", x: bx0 + bw + gap, y: by, w: bw, h: 104, down: false, hot: false };
+          btns.push(b1, b2);
+          drawButton(b1, "复制文案", "primary", false, t);
+          drawButton(b2, "再来一次", "mint", false, t);
+
+          drawToast(t);
+          drawSparkles(t);
+
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          ctx.globalCompositeOperation = "overlay";
+          ctx.drawImage(noise, 0, 0, LOGICAL_W, LOGICAL_H);
+          ctx.restore();
+        };
+
+        const drawFrame = (t) => {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.setTransform(scale, 0, 0, scale, ox, oy);
+          ctx.globalAlpha = 1;
+          ctx.textAlign = "left";
+          if (state.view === "start") drawStart(t);
+          else if (state.view === "how") drawHow(t);
+          else if (state.view === "play") drawPlay(t);
+          else drawEnding(t);
+        };
+
+        let pointerId = null;
+        const setHot = (x, y) => {
+          let changed = false;
+          for (const b of btns) {
+            const hot = x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+            if (!!b.hot !== hot) changed = true;
+            b.hot = hot;
+          }
+          return changed;
+        };
+
+        canvas.addEventListener("pointerdown", (e) => {
+          pointerId = e.pointerId;
+          canvas.setPointerCapture(pointerId);
+          const p = toLogical(e.clientX, e.clientY);
+          const b = hitTest(p.x, p.y);
+          if (b) {
+            b.down = true;
+            ensureAudio();
+            if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {});
+            beep(360, 0.04, "sine");
+          }
+          setHot(p.x, p.y);
+        }, { passive: true });
+
+        canvas.addEventListener("pointermove", (e) => {
+          const p = toLogical(e.clientX, e.clientY);
+          setHot(p.x, p.y);
+        }, { passive: true });
+
+        canvas.addEventListener("pointerup", (e) => {
+          const p = toLogical(e.clientX, e.clientY);
+          const b = hitTest(p.x, p.y);
+          for (const it of btns) it.down = false;
+          if (!b) return;
+          if (b.disabled) return;
+          if (state.view === "start") {
+            if (b.id === "start") {
+              freshRun();
+              return;
+            }
+            if (b.id === "how") {
+              state.view = "how";
+              state.animAt = nowMs();
+              return;
+            }
+          } else if (state.view === "how") {
+            if (b.id === "back") {
+              state.view = "start";
+              state.animAt = nowMs();
+              return;
+            }
+          } else if (state.view === "play") {
+            if (b.id === "c0") choose(0);
+            else if (b.id === "c1") choose(1);
+          } else if (state.view === "ending") {
+            if (b.id === "copy") copyShare();
+            else if (b.id === "again") {
+              state.view = "start";
+              state.animAt = nowMs();
+              state.toast = "";
+              addSpark(LOGICAL_W * 0.5, LOGICAL_H * 0.62, 18);
+              beep(520, 0.08, "triangle");
+            }
+          }
+        }, { passive: true });
+
+        canvas.addEventListener("pointercancel", () => {
+          pointerId = null;
+          for (const it of btns) it.down = false;
+        }, { passive: true });
+
+        const loop = (t) => {
+          drawFrame(t);
+          requestAnimationFrame(loop);
+        };
+
+        loadStore();
+        makeNoise();
+        resize();
+        window.addEventListener("resize", resize, { passive: true });
+        window.addEventListener("orientationchange", () => window.setTimeout(resize, 60), { passive: true });
+        requestAnimationFrame(loop);
+      } catch (_) {
+        const fatal = document.getElementById("fatal");
+        if (fatal) {
+          fatal.style.display = "flex";
+          const p = fatal.querySelector("p");
+          if (p) p.textContent = ERROR_TEXT;
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
