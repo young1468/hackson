@@ -5,7 +5,7 @@
 ## 特点
 
 - 前端使用原生 HTML/CSS/JS。
-- 前端已同步离线版 Canvas 新界面。
+- 前端已同步离线版 Cyber Canvas 新界面。
 - 后端使用 Node.js + Express。
 - API Key 只放在后端 `.env` 中。
 - 前端不会暴露 API Key。
@@ -89,7 +89,7 @@ http://localhost:3001/api/ending
 window.API_BASE = "http://localhost:3001";
 ```
 
-或直接修改 `frontend/index.html` 顶部的：
+或直接修改 `frontend/js/game.js` 顶部的：
 
 ```js
 const API_BASE = window.API_BASE || "http://localhost:3001";
