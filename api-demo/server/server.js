@@ -34,7 +34,9 @@ const systemPrompt = [
   "Return strict JSON only.",
   "Put final JSON in message.content.",
   "No markdown, no explanation, no thinking text.",
-  "Write short, light, absurd Chinese interactive life stories.",
+  "Write short, light Chinese interactive life stories with humor and mild absurdity.",
+  "Prefer relatable everyday comedy, awkward reversals, and warm social sharing jokes.",
+  "Avoid over-the-top surreal plots. Keep the story understandable and close to daily life.",
   "Avoid bloody, vulgar, illegal, infringing, political, or unsafe content."
 ].join("\n");
 
@@ -188,10 +190,13 @@ function buildNextPrompt(input) {
     `属性=${JSON.stringify(input.stats)}`,
     `历史=${JSON.stringify(history)}`,
     "必须承接历史里最近一次 result，让下一幕像同一段人生继续发展。",
+    "幽默感优先，荒诞感适中：像朋友圈会笑一下的生活短剧，不要写成完全超现实。",
+    "每个选择 result 都要有一个轻松反转，可以用误会、尴尬、巧合、过度解读来制造笑点。",
     "返回一个真实剧情 JSON，不要返回字段说明，不要返回“选项A/选项B/30字内剧情”等占位词。",
     "JSON 必须只有这些字段：story, choices, scene。",
-    "story 是 20 到 35 字中文剧情。",
+    "story 是 24 到 42 字中文剧情，使用日常场景里的小反常或小尴尬。",
     "choices 必须正好两个，每个包含 text、result、effects。",
+    "choice.text 是 4 到 10 个中文字符；choice.result 是 18 到 34 个中文字符。",
     "effects 包含 mood、money、luck、crazy，数值范围 -20 到 20。",
     "scene 只能是 student、office、startup、cat、space、city。"
   ].join("\n");
@@ -199,14 +204,16 @@ function buildNextPrompt(input) {
 
 function buildEndingPrompt(input) {
   return [
-    "生成中文荒诞人生结局。",
+    "生成中文幽默人生结局。",
     `身份=${input.role}`,
     `最终属性=${JSON.stringify(input.stats)}`,
     `历史=${JSON.stringify(input.history.slice(-3))}`,
+    "结局要轻松幽默，有一点点荒诞，但不要过度超现实。重点是好笑、顺口、适合分享。",
+    "可以点名一个具体生活物件或小事件，例如奶茶、PPT、猫窝、电梯、共享单车、咖啡、宿舍群等。",
     "返回一个真实结局 JSON，不要返回字段说明，不要返回“短标题”等占位词。",
     "JSON 必须只有这些字段：title, description, shareText。",
     "title 是 6 到 14 字中文标题。",
-    "description 是 50 到 80 字中文结局描述。",
+    "description 是 38 到 56 字中文结局描述，短句优先，适合手机屏幕完整显示。",
     "shareText 格式：我在《一分钟人生岔路口》里活成了：加上标题。"
   ].join("\n");
 }
@@ -483,8 +490,8 @@ function normalizeEffects(effects) {
 }
 
 function normalizeEnding(value, role, fallback) {
-  const title = safeText(value?.title, 40) || fallback.title;
-  const description = safeText(value?.description, 140) || fallback.description;
+  const title = safeText(value?.title, 24) || fallback.title;
+  const description = safeText(value?.description, 90) || fallback.description;
   return {
     title,
     description,
