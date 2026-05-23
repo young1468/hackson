@@ -34,9 +34,9 @@ const systemPrompt = [
   "Return strict JSON only.",
   "Put final JSON in message.content.",
   "No markdown, no explanation, no thinking text.",
-  "Write short, light, highly absurd Chinese interactive life stories with strong contrast.",
-  "Use surprising but safe everyday objects, office/school/cat/space misunderstandings, and funny reversals.",
-  "Do not write realistic diary summaries. Every event needs one strange twist.",
+  "Write short, light Chinese interactive life stories with humor and mild absurdity.",
+  "Prefer relatable everyday comedy, awkward reversals, and warm social sharing jokes.",
+  "Avoid over-the-top surreal plots. Keep the story understandable and close to daily life.",
   "Avoid bloody, vulgar, illegal, infringing, political, or unsafe content."
 ].join("\n");
 
@@ -190,11 +190,11 @@ function buildNextPrompt(input) {
     `属性=${JSON.stringify(input.stats)}`,
     `历史=${JSON.stringify(history)}`,
     "必须承接历史里最近一次 result，让下一幕像同一段人生继续发展。",
-    "荒诞程度要高：让日常物品突然获得职务、规则或误会，例如奶茶被任命、打印机讲价、猫发布部门公告、外星人误解地球礼仪。",
-    "每个选择 result 都要有一个轻松反转，不能只是普通流水账。",
+    "幽默感优先，荒诞感适中：像朋友圈会笑一下的生活短剧，不要写成完全超现实。",
+    "每个选择 result 都要有一个轻松反转，可以用误会、尴尬、巧合、过度解读来制造笑点。",
     "返回一个真实剧情 JSON，不要返回字段说明，不要返回“选项A/选项B/30字内剧情”等占位词。",
     "JSON 必须只有这些字段：story, choices, scene。",
-    "story 是 24 到 42 字中文剧情，必须包含一个离谱但安全的突发状况。",
+    "story 是 24 到 42 字中文剧情，使用日常场景里的小反常或小尴尬。",
     "choices 必须正好两个，每个包含 text、result、effects。",
     "choice.text 是 4 到 10 个中文字符；choice.result 是 18 到 34 个中文字符。",
     "effects 包含 mood、money、luck、crazy，数值范围 -20 到 20。",
@@ -204,12 +204,12 @@ function buildNextPrompt(input) {
 
 function buildEndingPrompt(input) {
   return [
-    "生成中文荒诞人生结局。",
+    "生成中文幽默人生结局。",
     `身份=${input.role}`,
     `最终属性=${JSON.stringify(input.stats)}`,
     `历史=${JSON.stringify(input.history.slice(-3))}`,
-    "结局要比普通生活更荒诞：把最终属性变成一个奇怪身份、称号或社会职务，但保持轻松、可分享。",
-    "必须点名一个具体离谱物件或事件，例如奶茶、打印机、猫窝、共享单车、PPT、电梯、宇宙客服等。",
+    "结局要轻松幽默，有一点点荒诞，但不要过度超现实。重点是好笑、顺口、适合分享。",
+    "可以点名一个具体生活物件或小事件，例如奶茶、PPT、猫窝、电梯、共享单车、咖啡、宿舍群等。",
     "返回一个真实结局 JSON，不要返回字段说明，不要返回“短标题”等占位词。",
     "JSON 必须只有这些字段：title, description, shareText。",
     "title 是 6 到 14 字中文标题。",
