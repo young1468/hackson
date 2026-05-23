@@ -122,71 +122,116 @@ function splitText(text,maxWidth){
    角色系统
 ========================================= */
 
+
 const CHARACTERS = [
 
   {
-    id:'coder',
+    id:'cat',
 
-    name:'落魄程序员',
+    name:'流浪猫',
 
-    title:'Code Runner',
+    title:'Street Cat',
+
+    color:'#ffb703',
+
+    avatar:'🐈',
+
+    desc:
+      '你最大的梦想是晒太阳和不被驱赶。',
+
+    stats:{
+      mood:80,
+      money:10,
+      luck:60,
+      crazy:40
+    }
+  },
+
+  {
+    id:'student',
+
+    name:'大学生',
+
+    title:'Deadline Survivor',
 
     color:'#00d0ff',
 
-    avatar:'⌘',
+    avatar:'🎓',
 
     desc:
-      '你长期熬夜，依靠咖啡和Bug生存。',
+      '你在DDL和早八之间挣扎求生。',
 
     stats:{
-      mood:45,
-      money:70,
-      luck:40,
+      mood:55,
+      money:25,
+      luck:55,
+      crazy:50
+    }
+  },
+
+  {
+    id:'worker',
+
+    name:'社畜',
+
+    title:'Corporate Slave',
+
+    color:'#ff4ecd',
+
+    avatar:'💼',
+
+    desc:
+      '你每天都在等下班通知。',
+
+    stats:{
+      mood:35,
+      money:65,
+      luck:35,
+      crazy:70
+    }
+  },
+
+  {
+    id:'founder',
+
+    name:'创业者',
+
+    title:'Dream Chaser',
+
+    color:'#00ff99',
+
+    avatar:'🚀',
+
+    desc:
+      '你坚信下一个风口属于自己。',
+
+    stats:{
+      mood:60,
+      money:45,
+      luck:70,
       crazy:65
     }
   },
 
   {
-    id:'streamer',
+    id:'alien',
 
-    name:'虚拟主播',
+    name:'外星人',
 
-    title:'Virtual Idol',
+    title:'Unknown Visitor',
 
-    color:'#ff4ecd',
+    color:'#9b5cff',
 
-    avatar:'◉',
-
-    desc:
-      '你活在镜头和算法推荐里。',
-
-    stats:{
-      mood:65,
-      money:45,
-      luck:70,
-      crazy:55
-    }
-  },
-
-  {
-    id:'hacker',
-
-    name:'朋克黑客',
-
-    title:'Ghost Hacker',
-
-    color:'#00ff99',
-
-    avatar:'⚡',
+    avatar:'👽',
 
     desc:
-      '你相信一切系统都能被破解。',
+      '你假装自己是普通地球人。',
 
     stats:{
       mood:50,
-      money:40,
-      luck:80,
-      crazy:75
+      money:50,
+      luck:90,
+      crazy:90
     }
   }
 
@@ -199,15 +244,100 @@ const CHARACTERS = [
 const EVENTS = [
 
   {
-    text:'凌晨三点，你收到神秘高薪工作邀请。',
+    text:'你半夜刷视频时突然看到“7天财富自由训练营”。',
 
-    a:'立即接单',
+    a:'立刻报名',
 
-    b:'怀疑诈骗',
+    b:'继续摆烂',
 
     da:{
-      money:20,
-      crazy:10,
+      money:-10,
+      crazy:8
+    },
+
+    db:{
+      mood:5
+    },
+
+    ar:'你开始被成功学洗脑。',
+    br:'你继续躺平刷短视频。'
+  },
+
+  {
+    text:'你的朋友突然想拉你一起开奶茶店。',
+
+    a:'激情创业',
+
+    b:'婉拒',
+
+    da:{
+      money:-25,
+      mood:10,
+      crazy:15
+    },
+
+    db:{
+      money:5,
+      mood:-3
+    },
+
+    ar:'你们开始通宵研究logo。',
+    br:'你成功保住积蓄。'
+  },
+
+  {
+    text:'AI突然学会了你的说话方式。',
+
+    a:'继续训练AI',
+
+    b:'立刻断网',
+
+    da:{
+      money:10,
+      crazy:20
+    },
+
+    db:{
+      mood:5,
+      luck:-5
+    },
+
+    ar:'AI开始替你回复消息。',
+    br:'你避免了电子人格觉醒。'
+  },
+
+  {
+    text:'老板凌晨两点给你发消息：“在吗？”',
+
+    a:'秒回',
+
+    b:'装死',
+
+    da:{
+      money:10,
+      mood:-15,
+      crazy:10
+    },
+
+    db:{
+      mood:10,
+      money:-5
+    },
+
+    ar:'你获得“优秀员工”称号。',
+    br:'老板开始怀疑你。'
+  },
+
+  {
+    text:'你的彩票差一个数字就中大奖。',
+
+    a:'继续买',
+
+    b:'彻底戒赌',
+
+    da:{
+      money:-15,
+      crazy:12,
       luck:5
     },
 
@@ -216,51 +346,49 @@ const EVENTS = [
       luck:-3
     },
 
-    ar:'你接到了危险项目。',
-    br:'你安全了，但也错过机会。'
+    ar:'你坚信下一次必中。',
+    br:'你终于恢复理智。'
   },
 
   {
-    text:'AI突然开始模仿你的语气。',
+    text:'有人邀请你测试神秘脑机接口。',
 
-    a:'继续训练',
+    a:'直接连接',
 
-    b:'立刻关闭',
+    b:'拒绝实验',
 
     da:{
-      money:10,
-      crazy:15
+      crazy:25,
+      mood:8,
+      luck:10
     },
 
     db:{
-      mood:5,
-      luck:-5
+      mood:-2
     },
 
-    ar:'AI学会了阴阳怪气。',
-    br:'你避免了数字灾难。'
+    ar:'你开始听见WiFi声音。',
+    br:'你保住了大脑。'
   },
 
   {
-    text:'朋友邀请你投资元宇宙奶茶店。',
+    text:'你的猫突然开始会说话。',
 
-    a:'ALL IN',
+    a:'认真交流',
 
-    b:'冷静拒绝',
+    b:'假装没听见',
 
     da:{
-      money:-20,
-      mood:15,
-      crazy:12
+      crazy:18,
+      mood:15
     },
 
     db:{
-      money:5,
-      mood:-4
+      mood:-5
     },
 
-    ar:'你成为第一批受害者。',
-    br:'你保住了存款。'
+    ar:'猫要求增加罐头预算。',
+    br:'你怀疑自己熬夜过度。'
   }
 
 ];
@@ -269,21 +397,50 @@ const EVENTS = [
    结局
 ========================================= */
 
+/* =========================================
+   结局
+========================================= */
+
 const ENDINGS = [
 
   {
-    title:'赛博传奇',
-    desc:'你成为了都市传说。'
+    title:'宇宙首富',
+    desc:'你成功财富自由，甚至买下了月球别墅。'
   },
 
   {
     title:'数字幽灵',
-    desc:'互联网仍然残留你的痕迹。'
+    desc:'互联网仍在自动发布你的动态。'
   },
 
   {
-    title:'普通人类',
-    desc:'你成功活成了稳定的大人。'
+    title:'稳定人生',
+    desc:'你终于学会按时睡觉。'
+  },
+
+  {
+    title:'彻底疯狂',
+    desc:'你开始和冰箱聊天。'
+  },
+
+  {
+    title:'神秘失踪',
+    desc:'没人知道你去了哪里。'
+  },
+
+  {
+    title:'流浪传奇',
+    desc:'你的故事在街头广为流传。'
+  },
+
+  {
+    title:'创业失败',
+    desc:'你现在欠了三十年的贷款。'
+  },
+
+  {
+    title:'地球观察员',
+    desc:'你决定返回母星提交观察报告。'
   }
 
 ];
@@ -293,7 +450,10 @@ const ENDINGS = [
 ========================================= */
 
 const state = {
-
+    scrollY:0,
+    velocity:0,
+    isDragging:false,
+    lastY:0,
     scene:'select',
 
     selected:0,
@@ -303,6 +463,10 @@ const state = {
     typingIndex:0,
     shake:0,
     transition:0,
+    collection:{
+      endings:[],
+      characters:[]
+    },
     stats:{
         mood:50,
         money:50,
@@ -320,6 +484,39 @@ const state = {
 };
 
 let buttons=[];
+
+/* =========================================
+   存档系统
+========================================= */
+
+function saveCollection(){
+
+  localStorage.setItem(
+    'cyberLifeCollection',
+    JSON.stringify(state.collection)
+  );
+}
+
+function loadCollection(){
+
+  const data =
+    localStorage.getItem(
+      'cyberLifeCollection'
+    );
+
+  if(data){
+
+    try{
+
+      state.collection =
+        JSON.parse(data);
+
+    }catch(e){
+
+      console.log(e);
+    }
+  }
+}
 
 /* =========================================
    UI
@@ -536,7 +733,8 @@ function drawSelect(t){
 
   CHARACTERS.forEach((c,i)=>{
 
-    const y=220+i*200;
+    const baseY = 190 + i * 145;
+    const y = baseY + state.scrollY;
 
     const selected=
       state.selected===i;
@@ -545,7 +743,7 @@ function drawSelect(t){
       50,
       y,
       440,
-      160,
+      120,
       c.color
     );
 
@@ -615,26 +813,60 @@ function drawSelect(t){
       x:50,
       y,
       w:440,
-      h:160
+      h:120
     });
   });
-
+  const startY = 920 + state.scrollY;
+  const collectionY = 1005 + state.scrollY;
   drawButton(
     140,
-    860,
+    startY,
     260,
     60,
     '进入人生',
     CHARACTERS[state.selected].color
   );
 
+  drawButton(
+    140,
+    collectionY,
+    260,
+    50,
+    '人生图鉴',
+    '#ff4ecd'
+  );
+
+  buttons.push({
+    id:'collection',
+    x:140,
+    y:collectionY,
+    w:260,
+    h:50
+  });
+
   buttons.push({
     id:'start',
     x:140,
-    y:860,
+    y:startY,
     w:260,
     h:60
   });
+
+  const maxScroll = 0;
+  const minScroll = -((CHARACTERS.length - 3) * 145);
+
+  state.scrollY += state.velocity;
+  state.velocity *= 0.92;
+
+  if(state.scrollY > maxScroll){
+    state.scrollY *= 0.2;
+    state.velocity = 0;
+  }
+
+  if(state.scrollY < minScroll){
+    state.scrollY += (minScroll - state.scrollY) * 0.2;
+    state.velocity = 0;
+  }
 }
 
 /* =========================================
@@ -938,6 +1170,137 @@ function drawEnding(){
 }
 
 /* =========================================
+   图鉴界面
+========================================= */
+
+function drawCollection(){
+  console.log("进入图鉴界面");
+  buttons=[];
+
+  drawTitle();
+
+  ctx.fillStyle='white';
+
+  ctx.font=FONT_BIG;
+
+  ctx.fillText(
+    '人生图鉴 COLLECTION',
+    90,
+    150
+  );
+
+  /* =========================
+     角色图鉴
+  ========================= */
+
+  ctx.font=FONT_TEXT;
+
+  ctx.fillStyle='#00d0ff';
+
+  CHARACTERS.forEach((c,i)=>{
+
+    const unlocked =
+      state.collection.characters
+      .includes(c.id);
+
+    const x=60+(i%2)*220;
+
+    const y = 250 + Math.floor(i/2)*130 + state.scrollY;
+
+    drawCard(
+      x,
+      y,
+      180,
+      100,
+      unlocked
+        ? c.color
+        : '#374151'
+    );
+
+    ctx.globalAlpha=
+      unlocked ? 1 : .3;
+
+    ctx.font='50px Orbitron';
+
+    ctx.fillStyle='white';
+
+    ctx.fillText(
+      unlocked ? c.avatar : '?',
+      x+20,
+      y+65
+    );
+
+    ctx.font=FONT_SMALL;
+
+    ctx.fillText(
+      unlocked
+        ? c.name
+        : '未解锁',
+      x+80,
+      y+60
+    );
+
+    ctx.globalAlpha=1;
+  });
+
+  /* =========================
+     结局图鉴
+  ========================= */
+
+  ctx.fillStyle='#ff4ecd';
+
+  ctx.font=FONT_TEXT;
+
+  ENDINGS.forEach((e,i)=>{
+
+    const unlocked =
+      state.collection.endings
+      .includes(e.title);
+
+    const y = 600 + i * 70 + state.scrollY;
+
+    drawCard(
+      60,
+      y,
+      420,
+      55,
+      unlocked
+        ? '#ff4ecd'
+        : '#374151'
+    );
+
+    ctx.fillStyle='white';
+
+    ctx.font=FONT_SMALL;
+
+    ctx.fillText(
+      unlocked
+        ? e.title
+        : '？？？？',
+      90,
+      y+35
+    );
+  });
+
+  drawButton(
+    140,
+    880,
+    260,
+    60,
+    '返回',
+    '#00d0ff'
+  );
+
+  buttons.push({
+    id:'back',
+    x:140,
+    y:880,
+    w:260,
+    h:60
+  });
+}
+
+/* =========================================
    游戏逻辑
 ========================================= */
 
@@ -952,6 +1315,12 @@ function startProfile(){
         state.profile.stats
       )
     );
+
+  if(!state.collection.characters.includes(state.profile.id))
+  {
+    state.collection.characters.push(state.profile.id);
+    saveCollection();
+  }
 
   state.scene='profile';
 
@@ -996,9 +1365,67 @@ function choose(side){
     30
   );
 
+  /* =========================
+     突发死亡/提前结束
+  ========================= */
+
+  const s=state.stats;
+
+  if(s.crazy>=100){
+
+    state.ending=ENDINGS[3];
+
+    state.scene='ending';
+
+    return;
+  }
+
+  if(s.money<=0){
+
+    state.ending=ENDINGS[5];
+
+    state.scene='ending';
+
+    return;
+  }
+
+  if(s.mood<=0){
+
+    state.ending=ENDINGS[4];
+
+    state.scene='ending';
+
+    return;
+  }
+
+  if(Math.random()<0.12){
+
+    const randomEnding=[
+      ENDINGS[1],
+      ENDINGS[4],
+      ENDINGS[6]
+    ];
+
+    state.ending=
+      randomEnding[
+        Math.floor(
+          Math.random()*
+          randomEnding.length
+        )
+      ];
+
+    state.scene='ending';
+
+    return;
+  }
+
   state.step++;
 
-  if(state.step>=EVENTS.length){
+  /* =========================
+     不固定轮数
+  ========================= */
+
+  if(state.step>=6+Math.floor(Math.random()*4)){
 
     setTimeout(()=>{
       finishGame();
@@ -1009,7 +1436,11 @@ function choose(side){
     setTimeout(()=>{
 
       state.current=
-        EVENTS[state.step];
+        EVENTS[
+          Math.floor(
+            Math.random()*EVENTS.length
+          )
+        ];
 
       state.result='';
 
@@ -1034,19 +1465,54 @@ function finishGame(){
 
   state.scene='ending';
 
-  if(state.stats.crazy>80){
+  const s=state.stats;
 
-    state.ending=ENDINGS[1];
+  if(
+    state.profile.id==='alien'
+    &&
+    s.crazy>85
+  ){
 
-  }else if(state.stats.money>70){
+    state.ending=ENDINGS[7];
+
+  }else if(
+    s.money>85
+  ){
 
     state.ending=ENDINGS[0];
 
-  }else{
+  }else if(
+    s.crazy>80
+  ){
+
+    state.ending=ENDINGS[1];
+
+  }else if(
+    s.mood>75
+  ){
 
     state.ending=ENDINGS[2];
-  }
 
+  }else if(
+    s.money<20
+  ){
+
+    state.ending=ENDINGS[6];
+
+  }else{
+
+    state.ending=
+      ENDINGS[
+        Math.floor(
+          Math.random()*ENDINGS.length
+        )
+      ];
+  }
+  if(!state.collection.endings.includes(state.ending.title))
+  {
+    state.collection.endings.push(state.ending.title);
+    saveCollection();
+  }
   addParticleBurst(
     particleSystem,
     270,
@@ -1060,7 +1526,7 @@ function finishGame(){
 ========================================= */
 
 function hit(x,y){
-
+  if(state.isDragging) return;
   for(let b of buttons){
 
     if(
@@ -1091,6 +1557,11 @@ canvas.addEventListener(
       (e.clientY-rect.top)*
       (LOGICAL_H/rect.height);
 
+    if(state.scene === 'select' && Math.abs(state.velocity) > 5){
+      return;
+    }
+
+    
     const btn=hit(x,y);
 
     if(!btn)return;
@@ -1127,8 +1598,35 @@ canvas.addEventListener(
       state.scene='select';
     }
 
+    if(btn.id==='collection'){
+      state.scene='collection';
+    }
+
+    if(btn.id==='back'){
+      state.scene='select';
+    }
   }
 );
+
+canvas.addEventListener('pointerdown', (e)=>{
+  state.isDragging = true;
+  state.lastY = e.clientY;
+});
+
+canvas.addEventListener('pointermove', (e)=>{
+  if(!state.isDragging) return;
+  if(state.scene !== 'select' && state.scene !== 'collection') return;
+  const dy = e.clientY - state.lastY;
+
+  state.scrollY += dy;
+  state.velocity = dy;
+
+  state.lastY = e.clientY;
+});
+
+canvas.addEventListener('pointerup', ()=>{
+  state.isDragging = false;
+});
 
 /* =========================================
    Resize
@@ -1178,6 +1676,10 @@ function loop(t){
     drawEnding();
   }
 
+  if(state.scene==='collection'){
+    drawCollection();
+  }
+
   updateParticles(
     particleSystem
   );
@@ -1193,6 +1695,8 @@ function loop(t){
 /* =========================================
    INIT
 ========================================= */
+
+loadCollection();
 
 initParticleSystem(
   window.innerWidth,
