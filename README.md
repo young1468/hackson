@@ -2,34 +2,6 @@
 
 面向抖音互动空间 Hackathon 的 HTML5 竖屏互动剧情 Demo。玩家选择一种人生身份，连续做出 6 次选择，每次选择都会改变心态、钱包、运气和离谱值，最终生成一个幽默、轻荒诞、适合分享的人生结局。
 
-## 演示视频
-
-准备把演示视频放到 GitHub 时，推荐导出为：
-
-```text
-docs/demo.mp4
-```
-
-上传后可以使用下面的链接访问：
-
-[点击查看演示视频](docs/demo.mp4)
-
-如果希望在支持 HTML 视频标签的页面中内嵌展示，可以使用：
-
-```html
-<video src="docs/demo.mp4" controls width="360"></video>
-```
-
-提交视频：
-
-```bash
-git add docs/demo.mp4 README.md
-git commit -m "Add demo video"
-git push
-```
-
-注意：GitHub 单个文件建议控制在 100MB 以内。视频较大时建议压缩到 720p，或使用 Git LFS / Releases 上传。
-
 ## 项目结构
 
 ```text
