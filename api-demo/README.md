@@ -6,6 +6,7 @@
 
 - 前端使用原生 HTML/CSS/JS。
 - 前端已同步离线版 Cyber Canvas 新界面。
+- 前端内置 `API模式 / 离线模式` 切换按钮，可在同一界面自由切换生成方式。
 - 后端使用 Node.js + Express。
 - API Key 只放在后端 `.env` 中。
 - 前端不会暴露 API Key。
@@ -82,6 +83,12 @@ http://localhost:5173
 http://localhost:3001/api/next
 http://localhost:3001/api/ending
 ```
+
+页面右上角可以点击 `API模式 / 离线模式`：
+
+- `API模式`：每一步请求后端大模型接口。
+- `离线模式`：只使用前端内置本地剧情，不请求后端。
+- 切换只影响后续剧情和结局，正在加载 API 时切到离线会立即改用本地剧情。
 
 如需调整后端地址，可在前端页面加载前设置：
 

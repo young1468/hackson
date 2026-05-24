@@ -259,6 +259,7 @@ const state = {
   profile:     null,
   loading:     false,
   runId:       0,
+  mode:        localStorage.getItem('lifeCrossroadsMode') || 'api',
   choosing:    false, // 防止狂点按钮
   maxSteps:    TOTAL_STEPS
 };
@@ -366,12 +367,21 @@ function drawToast() {
   ctx.textAlign = 'left';
 }
 
+function drawModeToggle() {
+  const isApi = state.mode === 'api';
+  const label = isApi ? 'API模式' : '离线模式';
+  const color = isApi ? '#00d0ff' : '#ffd166';
+  drawButton(352, 122, 138, 46, label, color);
+  buttons.push({ id: 'mode', x: 352, y: 122, w: 138, h: 46 });
+}
+
 /* =========================================
    角色选择 (UI已完全还原)
    ========================================= */
 function drawSelect(t) {
   buttons = [];
   drawTitle();
+  drawModeToggle();
   ctx.fillStyle = 'rgba(255,255,255,.6)';
   ctx.font = FONT_TEXT;
   ctx.fillText('选择你的人生身份', 120, 160);
@@ -427,6 +437,7 @@ function drawSelect(t) {
 function drawProfile() {
   const c = state.profile;
   drawTitle();
+  drawModeToggle();
   drawCard(50, 220, 440, 420, c.color);
 
   ctx.fillStyle = c.color;
@@ -453,6 +464,7 @@ function drawProfile() {
 
   drawButton(150, 760, 240, 70, '开始人生', c.color);
   buttons = [{ id: 'play', x: 150, y: 760, w: 240, h: 70 }];
+  buttons.push({ id: 'mode', x: 352, y: 122, w: 138, h: 46 });
 }
 
 /* =========================================
@@ -478,6 +490,7 @@ function drawStats() {
 function drawGame(t) {
   buttons = [];
   drawStats();
+  drawModeToggle();
   const event = state.current || { text: '命运生成中……\nAI 正在续写你的下一幕。', a: '等待', b: '稍等' };
 
   drawCard(40, 260, 460, 260, state.profile.color);
@@ -526,6 +539,7 @@ function drawGame(t) {
    ========================================= */
 function drawEnding() {
   drawTitle();
+  drawModeToggle();
   drawCard(50, 170, 440, 480, state.profile.color);
 
   ctx.fillStyle = state.profile.color;
@@ -550,6 +564,7 @@ function drawEnding() {
     { id: 'copy', x: 70, y: 815, w: 180, h: 66 },
     { id: 'restart', x: 290, y: 815, w: 180, h: 66 }
   ];
+  buttons.push({ id: 'mode', x: 352, y: 122, w: 138, h: 46 });
 }
 
 /* =========================================
@@ -559,6 +574,7 @@ function drawCollection() {
   loadCollection();
   buttons = [];
   drawTitle();
+  drawModeToggle();
   ctx.fillStyle = 'white';
   ctx.font = FONT_BIG;
   ctx.fillText('人生图鉴 COLLECTION', 90, 150);
@@ -661,7 +677,14 @@ function startGame() {
 async function loadNextEvent(runId) {
   state.loading = true;
   state.choosing = true;
-  state.toast = '命运生成中……';
+  state.toast = state.mode === 'api' ? '命运生成中……' : '离线剧情生成中……';
+  if (state.mode === 'offline') {
+    state.current = pickFallbackEvent();
+    state.loading = false;
+    state.choosing = false;
+    state.toast = '';
+    return;
+  }
   try {
     const data = await postJson('/api/next', {
       role: state.profile.name,
@@ -687,6 +710,19 @@ async function loadNextEvent(runId) {
 function pickFallbackEvent() {
   pickRandomEvent();
   return state.current;
+}
+
+function toggleMode() {
+  state.mode = state.mode === 'api' ? 'offline' : 'api';
+  localStorage.setItem('lifeCrossroadsMode', state.mode);
+  state.toast = state.mode === 'api' ? '已切换到 API 生成模式。' : '已切换到离线剧情模式。';
+
+  if (state.scene === 'game' && state.loading) {
+    state.runId++;
+    state.current = pickFallbackEvent();
+    state.loading = false;
+    state.choosing = false;
+  }
 }
 
 function choose(side) {
@@ -736,9 +772,20 @@ function applyDelta(delta) {
 
 async function finishGame() {
   state.scene = 'ending';
-  state.ending = { title: '命运生成中……', desc: 'AI 正在整理你的一分钟人生，请稍等。' };
+  state.ending = {
+    title: state.mode === 'api' ? '命运生成中……' : '离线结局生成中……',
+    desc: state.mode === 'api' ? 'AI 正在整理你的一分钟人生，请稍等。' : '本地命运池正在整理你的六步选择。'
+  };
   state.share = '';
   const runId = state.runId;
+  if (state.mode === 'offline') {
+    state.ending = localEnding();
+    state.share = `我在《一分钟人生岔路口》里活成了：${state.ending.title}`;
+    addEndingToCollection(state.ending);
+    state.choosing = false;
+    addParticleBurst(particleSystem, 270, 400, 120);
+    return;
+  }
   try {
     const data = await postJson('/api/ending', {
       role: state.profile.name,
@@ -838,6 +885,7 @@ canvas.addEventListener('pointerup', e => {
   const btn = hit(x, y);
   if (!btn) return;
 
+  if (btn.id === 'mode')         { toggleMode(); return; }
   if (btn.id.startsWith('char')) { state.selected = Number(btn.id.replace('char', '')); }
   if (btn.id === 'start')        { startProfile(); }
   if (btn.id === 'play')         { startGame(); }
