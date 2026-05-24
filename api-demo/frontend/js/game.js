@@ -367,12 +367,13 @@ function drawToast() {
   ctx.textAlign = 'left';
 }
 
-function drawModeToggle() {
+function drawModeToggle(offsetY = 0) {
   const isApi = state.mode === 'api';
   const label = isApi ? 'API模式' : '离线模式';
   const color = isApi ? '#00d0ff' : '#ffd166';
-  drawButton(352, 122, 138, 46, label, color);
-  buttons.push({ id: 'mode', x: 352, y: 122, w: 138, h: 46 });
+  const y = 122 + offsetY;
+  drawButton(352, y, 138, 46, label, color);
+  buttons.push({ id: 'mode', x: 352, y, w: 138, h: 46 });
 }
 
 /* =========================================
@@ -387,7 +388,7 @@ function drawSelect(t) {
   ctx.font = FONT_TEXT;
   ctx.fillText('选择你的人生身份', 120, 160);
   ctx.restore();
-  drawModeToggle();
+  drawModeToggle(state.scrollY);
 
   CHARACTERS.forEach((c, i) => {
     const baseY = 190 + i * 145;
