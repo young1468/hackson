@@ -933,9 +933,39 @@ function loop(t) {
    INIT
    ========================================= */
 
-/* =========================================   背景音乐   ========================================= */const bgm = document.getElementById('bgm');bgm.volume = 0.4; // 音量 0.0 ~ 1.0，自己调
-// 浏览器策略：必须由用户交互触发播放// 监听第一次点击画布时启动音乐
-function startBGM() {  bgm.play().catch(err => console.log('BGM autoplay blocked:', err));  canvas.removeEventListener('pointerdown', startBGM);}canvas.addEventListener('pointerdown', startBGM);
+/* =========================================
+   背景音乐
+   ========================================= */
+const bgm = document.getElementById('bgm');
+let bgmStarted = false;
+
+function removeBGMListeners() {
+  canvas.removeEventListener('pointerdown', startBGM);
+  window.removeEventListener('click', startBGM);
+  window.removeEventListener('touchstart', startBGM);
+}
+
+function startBGM() {
+  if (!bgm || bgmStarted) return;
+  bgm.volume = 0.45;
+  bgm.muted = false;
+  bgm.play()
+    .then(() => {
+      bgmStarted = true;
+      removeBGMListeners();
+    })
+    .catch(err => {
+      console.log('BGM autoplay blocked, will retry on next tap:', err);
+    });
+}
+
+if (bgm) {
+  bgm.volume = 0.45;
+  bgm.load();
+  canvas.addEventListener('pointerdown', startBGM, { passive: true });
+  window.addEventListener('click', startBGM, { passive: true });
+  window.addEventListener('touchstart', startBGM, { passive: true });
+}
 loadCollection();
 initParticleSystem(window.innerWidth, window.innerHeight);
 resize();
