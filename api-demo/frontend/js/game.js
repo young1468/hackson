@@ -380,11 +380,14 @@ function drawModeToggle() {
    ========================================= */
 function drawSelect(t) {
   buttons = [];
+  ctx.save();
+  ctx.translate(0, state.scrollY);
   drawTitle();
-  drawModeToggle();
   ctx.fillStyle = 'rgba(255,255,255,.6)';
   ctx.font = FONT_TEXT;
   ctx.fillText('选择你的人生身份', 120, 160);
+  ctx.restore();
+  drawModeToggle();
 
   CHARACTERS.forEach((c, i) => {
     const baseY = 190 + i * 145;
