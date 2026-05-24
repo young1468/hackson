@@ -54,4 +54,4 @@ offline/index.html
 - `index.html` 可以完整跑通游戏。
 - zip 根目录直接包含 `index.html`。
 - 打包时包含 `css/`、`js/`、`audio/`。
-- 如果平台严格禁止任何外链，请检查 `index.html` 中的字体引用，必要时移除；系统字体可以正常兜底。
+- 不要把 `api-demo/`、`docs/` 或项目根目录一起打进上传包。
