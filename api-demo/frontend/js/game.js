@@ -1,162 +1,35 @@
-import {
-  initParticleSystem,
-  addParticleBurst,
-  updateParticles,
-  drawParticles,
-  resizeParticleCanvas,
-  particleSystem
-} from "./particles.js";
+﻿/* =========================================
+   CYBER LIFE SIMULATOR - FIXED VERSION
+   ========================================= */
 
-const API_BASE = window.API_BASE || "http://localhost:3001";
-const TOTAL_STEPS = 6;
+import {
+  initParticleSystem, addParticleBurst, addTrail,
+  updateParticles, drawParticles, resizeParticleCanvas, particleSystem
+} from './particles.js';
+
 const LOGICAL_W = 540;
 const LOGICAL_H = 960;
-const STAT_KEYS = ["mood", "money", "luck", "crazy"];
+const API_BASE = window.API_BASE || 'http://localhost:3001';
+const TOTAL_STEPS = 6;
+const STAT_KEYS = ['mood', 'money', 'luck', 'crazy'];
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const particleCanvas = document.getElementById('particle-canvas');
+const pCtx = particleCanvas.getContext('2d');
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const particleCanvas = document.getElementById("particle-canvas");
-const pCtx = particleCanvas.getContext("2d");
+/* =========================================
+   字体
+   ========================================= */
+const FONT_TITLE = '900 42px Orbitron';
+const FONT_BIG   = '700 30px Rajdhani';
+const FONT_TEXT  = '600 22px Rajdhani';
+const FONT_SMALL = '600 16px Rajdhani';
 
-const FONT_TITLE = '900 34px "PingFang SC", "Microsoft YaHei", sans-serif';
-const FONT_BIG = '800 28px "PingFang SC", "Microsoft YaHei", sans-serif';
-const FONT_TEXT = '700 21px "PingFang SC", "Microsoft YaHei", sans-serif';
-const FONT_SMALL = '600 15px "PingFang SC", "Microsoft YaHei", sans-serif';
-
-const ROLES = [
-  {
-    id: "student",
-    name: "大学生",
-    title: "DDL Runner",
-    color: "#00d0ff",
-    avatar: "学",
-    desc: "你有三份作业、两门考试和一颗想睡到自然醒的心。",
-    stats: { mood: 62, money: 38, luck: 55, crazy: 35 }
-  },
-  {
-    id: "office",
-    name: "社畜",
-    title: "Office Survivor",
-    color: "#ffb703",
-    avatar: "班",
-    desc: "你熟练掌握会议点头、表情包回复和把咖啡当护身符。",
-    stats: { mood: 52, money: 58, luck: 45, crazy: 42 }
-  },
-  {
-    id: "startup",
-    name: "创业者",
-    title: "Pitch Fighter",
-    color: "#ff4ecd",
-    avatar: "创",
-    desc: "你拥有一个商业计划、一张空白表格和明天起飞的错觉。",
-    stats: { mood: 68, money: 42, luck: 48, crazy: 62 }
-  },
-  {
-    id: "cat",
-    name: "猫",
-    title: "House Boss",
-    color: "#00ff99",
-    avatar: "喵",
-    desc: "你没有工作，但全家都在为你的情绪价值打工。",
-    stats: { mood: 74, money: 28, luck: 64, crazy: 55 }
-  },
-  {
-    id: "space",
-    name: "外星人",
-    title: "Earth Visitor",
-    color: "#a78bfa",
-    avatar: "星",
-    desc: "你刚降落地球，误以为便利店关东煮是能量核心。",
-    stats: { mood: 60, money: 24, luck: 58, crazy: 75 }
-  }
-];
-
-const LOCAL_EVENTS = {
-  student: [
-    event("凌晨一点，论文只写了标题，室友说夜宵也是学术燃料。", "边吃边写", "你吃出了灵感，也吃出了困意。论文开头像菜单。", { mood: 8, money: -14, luck: -2, crazy: 10 }, "打开文献", "你读完摘要后开始敬畏知识，顺便睡着二十分钟。", { mood: -4, money: 4, luck: 6, crazy: -3 }),
-    event("老师突然说下节课随堂展示，你的 PPT 还停在新建页面。", "极简硬讲", "三页空白被你讲成了哲学，老师说很有留白意识。", { mood: 10, luck: 10, crazy: 14 }, "请求组员", "组员发来一个压缩包，里面还有三个压缩包。", { mood: -8, luck: 2, crazy: 8 }),
-    event("校园卡只剩三块二，但食堂窗口今天出了隐藏菜。", "冲隐藏菜", "阿姨看你眼神坚定，多给了一勺。", { mood: 12, money: -3, luck: 12, crazy: 3 }, "白饭配想象力", "你把白饭吃出了纪录片旁白感。", { mood: -4, money: 6, crazy: 8 }),
-    event("考前夜群里流传重点，文件名叫最终最终真最终。", "相信重点", "考卷确实有重点，只是在你没看的下一页。", { mood: -10, luck: -8, crazy: 4 }, "自己梳理", "你发现会的不多，但至少知道不会在哪里。", { mood: 3, luck: 8, crazy: -4 }),
-    event("你抢到图书馆插座位，旁边键盘声像小型降雨。", "戴耳机专注", "耳机没电，你开始和键盘雨达成节奏合作。", { mood: -3, luck: -2, crazy: 8 }, "换到窗边", "阳光很好，你的学习效率和植物同步提升。", { mood: 9, luck: 6, crazy: -2 }),
-    event("宿舍突然停电，大家围着充电宝像围着古代火种。", "贡献充电宝", "你成为临时首领，但手机只剩百分之九。", { mood: 6, luck: 6, crazy: 8 }, "保存电量", "你省下电，却错过了室友的冷笑话大会。", { luck: -3, crazy: -2 })
-  ],
-  office: [
-    event("老板问这个需求简单吧，会议室空气突然很懂事。", "问题不大", "你被拉进三个会议，问题长出了翅膀。", { mood: -12, luck: -4, crazy: 9 }, "需要评估", "你获得二十分钟神圣缓冲区。", { mood: 5, luck: 6, crazy: -2 }),
-    event("测试环境突然不动了，同事们看向你，像你认识每行日志。", "重启服务", "服务暂时好了，但你知道这只是第一集。", { mood: -8, luck: -3, crazy: 8 }, "说是缓存", "大家沉默三秒，然后居然信了。", { mood: 6, luck: 10, crazy: 15 }),
-    event("下午茶只剩最后一杯奶茶，标签写着无糖加珍珠。", "拿下它", "你喝到珍珠，也喝到了同事的凝视。", { mood: 9, luck: -2, crazy: 4 }, "让给别人", "你获得办公室好人卡，附带一块苏打饼。", { mood: 3, luck: 6, crazy: -1 }),
-    event("日报系统下班前提醒你：今天还没有任何产出。", "写推进若干", "这句话像万能胶，粘住了今天。", { mood: 4, luck: 5, crazy: 6 }, "认真列十条", "你发现自己忙了一天，但忙得像开了静音。", { mood: -3, luck: 3, crazy: -2 }),
-    event("上线前十分钟，产品说按钮颜色不够命运感。", "调亮一点", "产品满意了，按钮像刚考上公务员一样精神。", { mood: 3, luck: 4, crazy: 7 }, "请求下版", "你保住上线窗口，也获得一条未来待办。", { mood: 7, luck: 2, crazy: -3 }),
-    event("你准备下班，电脑弹出系统更新：预计 47 分钟。", "现在更新", "更新完天都黑了，但电脑像换了清爽发型。", { mood: -5, luck: 3, crazy: 2 }, "明天再说", "你合上电脑，更新提示在梦里继续追你。", { mood: 8, luck: -3, crazy: 5 })
-  ],
-  startup: [
-    event("投资人问商业模式，你脑海弹出一张没填完的表。", "讲平台生态", "投资人点头，你也不知道他懂了还是困了。", { mood: 8, money: 6, luck: 5, crazy: 10 }, "诚实验证中", "空气短暂停顿，但你收获了一句很真实。", { mood: -2, luck: 8, crazy: -4 }),
-    event("群里有人问工资什么时候发，群名忽然很创业。", "热血语音", "大家听完沉默，财务发来余额截图更热血。", { mood: -7, money: -8, luck: -3, crazy: 11 }, "先发一半", "钱包瘦了，团队稳了，咖啡降级为速溶。", { mood: 5, money: -18, luck: 6, crazy: -2 }),
-    event("竞品上线同款功能，还多了一个会动的按钮。", "开会反击", "会议产出三十个想法和更会动的按钮。", { mood: -4, money: -3, luck: 2, crazy: 13 }, "先问用户", "用户说按钮动不动都行，关键是别卡。", { mood: 4, luck: 9, crazy: -5 }),
-    event("路演现场投影仪不认电脑，资本市场先识别风险。", "脱稿讲", "你越讲越顺，PPT 成为不在场的传奇。", { mood: 10, money: 5, luck: 12, crazy: 8 }, "换设备", "设备好了，字体乱了，标题像刚长途旅行。", { mood: -6, luck: -3, crazy: 5 }),
-    event("第一位付费用户出现，备注写着买错了能退吗。", "真诚退款", "用户感动，转介绍了一个真的会用的人。", { mood: 5, money: -4, luck: 11, crazy: -2 }, "询问原因", "你收获三页反馈和一份产品命名危机。", { mood: -2, luck: 7, crazy: 6 }),
-    event("深夜服务器账单弹出，你第一次觉得云也会下账单。", "优化资源", "账单降了，代码也像刚搬家一样整齐。", { mood: 6, money: 12, luck: 5, crazy: -3 }, "充值续命", "服务稳了，钱包轻了，你给云端点了夜宵。", { mood: -2, money: -15, luck: 2, crazy: 4 })
-  ],
-  cat: [
-    event("铲屎官买了新猫窝，但快递箱更有建筑美学。", "入住纸箱", "你宣布这里是新王宫，猫窝成为停车场。", { mood: 12, luck: 5, crazy: 9 }, "试试猫窝", "你睡了三分钟，给足了人类面子。", { mood: 5, luck: 2, crazy: -2 }),
-    event("凌晨四点，你想起客厅还有一条看不见的赛道。", "全速冲刺", "人类惊醒，你完成个人最好成绩。", { mood: 10, luck: -2, crazy: 15 }, "安静巡视", "你像小区保安检查每个角落，威严但不扰民。", { mood: 4, luck: 5, crazy: -4 }),
-    event("碗里还有粮，但你看见碗底一小块白色。", "呼叫人类", "人类补满了碗，你确认世界恢复秩序。", { mood: 9, luck: 4, crazy: 6 }, "象征性吃", "粮还行，但原则上仍需投诉。", { mood: 3, luck: 2, crazy: 2 }),
-    event("人类开视频会议，你发现键盘正好适合躺下。", "占领键盘", "会议出现神秘字符，同事认为这是高级加密。", { mood: 11, luck: 8, crazy: 14 }, "坐在镜头前", "会议效率提升，因为所有人都在夸你。", { mood: 9, luck: 7, crazy: 6 }),
-    event("新玩具是一只会响的小球，你决定评估它。", "疯狂扑球", "小球滚进沙发底，狩猎进入考古阶段。", { mood: 8, luck: -3, crazy: 9 }, "冷淡走开", "人类立刻开始逗你，玩具变成人类玩具。", { mood: 6, luck: 5, crazy: 4 }),
-    event("阳光落在地板上，形成刚好容纳猫的黄金地段。", "立刻躺平", "你被晒成温热的主宰，生活恢复高级。", { mood: 13, luck: 6, crazy: -3 }, "先绕三圈", "仪式完成，阳光地段正式归你所有。", { mood: 8, luck: 4, crazy: 5 })
-  ],
-  space: [
-    event("你降落在便利店门口，自动门像在欢迎外交使团。", "向门鞠躬", "店员也点头，你们完成跨文明礼仪。", { mood: 8, luck: 7, crazy: 8 }, "研究自动门", "门开了二十次，地球科技让你肃然起敬。", { mood: 5, luck: 2, crazy: 12 }),
-    event("你第一次看奶茶菜单，上面有许多甜度和小料。", "全都加一点", "杯子沉甸甸，像一颗可饮用小行星。", { mood: 9, money: -12, luck: 3, crazy: 14 }, "店员推荐", "你开始理解地球人的温柔陷阱。", { mood: 7, money: -6, luck: 5, crazy: -2 }),
-    event("地铁广播提醒先下后上，你以为这是地球哲学课。", "认真记录", "你写下：文明核心是让门口保持流动。", { mood: 5, luck: 6, crazy: 4 }, "跟人群走", "你被精准送进车厢，像被社会算法排序。", { mood: -2, luck: 5, crazy: 8 }),
-    event("共享单车需要扫码，你把二维码当成部落图腾。", "拍照研究", "你没解锁车，但收获端正的图腾照片。", { mood: -2, luck: -3, crazy: 6 }, "请路人帮忙", "路人教会你扫码，你把他列为地球导师。", { mood: 8, money: -2, luck: 9, crazy: -3 }),
-    event("你听见有人说摸鱼，于是开始寻找水源和鱼。", "认真询问", "大家笑了，然后告诉你这是一种精神游泳。", { mood: 6, luck: 5, crazy: 10 }, "假装听懂", "你点头过于坚定，被邀请加入午休散步小队。", { mood: 7, luck: 7, crazy: 5 }),
-    event("你被邀请参加广场舞，地面似乎拥有集体意识。", "加入队形", "动作不标准，但大家夸你有星际风。", { mood: 12, luck: 8, crazy: 13 }, "旁边记录", "你写下：地球人用同步移动维护邻里关系。", { mood: 6, luck: 5, crazy: 5 })
-  ]
-};
-
-const LOCAL_ENDINGS = [
-  { title: "全靠玄学活下来的打工仙人", desc: "你没有解决所有问题，但每次问题都自己消失了。大家觉得你深不可测。" },
-  { title: "离谱值超标观察对象", desc: "你的人生报告被标注为请勿用常识解释，围观群众决定先给你鼓掌。" },
-  { title: "余额三块但精神富翁", desc: "你的钱包很安静，但经历很热闹。朋友问你怎么撑过来，你说主要靠心态。" },
-  { title: "心态归零但流程完整", desc: "你一度只剩躯壳在点击选项，但仍然完成六步，命运给你发了参与奖。" },
-  { title: "被生活随机播放的人", desc: "你的六次选择像歌单随机播放，上一秒励志，下一秒跑偏，但节奏居然踩住了。" }
-];
-
-const state = {
-  scene: "select",
-  selected: 0,
-  step: 0,
-  stats: { mood: 50, money: 50, luck: 50, crazy: 50 },
-  current: null,
-  result: "",
-  ending: null,
-  share: "",
-  profile: null,
-  history: [],
-  usedLocal: new Set(),
-  loading: false,
-  locked: false,
-  runId: 0,
-  toast: ""
-};
-
-let buttons = [];
-
-function event(text, a, ar, da, b, br, db) {
-  return { text, a, b, ar, br, da: normalizeDelta(da), db: normalizeDelta(db) };
-}
-
-function clamp(v, a, b) {
-  return Math.max(a, Math.min(b, v));
-}
-
-function random(a, b) {
-  return Math.random() * (b - a) + a;
-}
-
-function pick(items) {
-  return items[Math.floor(Math.random() * items.length)];
-}
+/* =========================================
+   工具
+   ========================================= */
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function random(a, b)    { return Math.random() * (b - a) + a; }
 
 function roundRect(x, y, w, h, r) {
   ctx.beginPath();
@@ -174,9 +47,9 @@ function roundRect(x, y, w, h, r) {
 
 function splitText(text, maxWidth) {
   const lines = [];
-  for (const paragraph of String(text || "").split("\n")) {
-    let current = "";
-    for (const c of paragraph) {
+  for (const paragraph of String(text || '').split('\n')) {
+    let current = '';
+    for (let c of paragraph) {
       const test = current + c;
       if (ctx.measureText(test).width > maxWidth && current) {
         lines.push(current);
@@ -194,24 +67,24 @@ function normalizeDelta(delta) {
   const output = {};
   for (const key of STAT_KEYS) {
     const value = Number(delta && delta[key]);
-    output[key] = Number.isFinite(value) ? clamp(value, -25, 25) : 0;
+    output[key] = Number.isFinite(value) ? clamp(Math.round(value), -25, 25) : 0;
   }
   return output;
 }
 
 function normalizeApiEvent(data) {
-  if (!data || typeof data.story !== "string" || !Array.isArray(data.choices)) return null;
+  if (!data || typeof data.story !== 'string' || !Array.isArray(data.choices)) return null;
   const choices = data.choices.slice(0, 2);
   if (choices.length !== 2) return null;
-  return event(
-    data.story.slice(0, 90),
-    String(choices[0].text || "顺着命运走").slice(0, 16),
-    String(choices[0].result || "命运绕了一下，但还能继续。").slice(0, 80),
-    choices[0].effects,
-    String(choices[1].text || "换个姿势试试").slice(0, 16),
-    String(choices[1].result || "世界短暂沉默，然后继续运转。").slice(0, 80),
-    choices[1].effects
-  );
+  return {
+    text: data.story.slice(0, 90),
+    a: String(choices[0].text || '顺着命运走').slice(0, 16),
+    b: String(choices[1].text || '换个姿势试试').slice(0, 16),
+    ar: String(choices[0].result || '命运绕了一下，但还能继续。').slice(0, 80),
+    br: String(choices[1].result || '世界短暂沉默，然后继续运转。').slice(0, 80),
+    da: normalizeDelta(choices[0].effects),
+    db: normalizeDelta(choices[1].effects)
+  };
 }
 
 function apiHistory() {
@@ -227,8 +100,8 @@ async function postJson(path, payload) {
   const timer = window.setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       signal: controller.signal
     });
@@ -239,48 +112,223 @@ async function postJson(path, payload) {
   }
 }
 
+/* =========================================
+   角色系统 (已完全恢复原版 Emoji)
+   ========================================= */
+const CHARACTERS = [
+  {
+    id: 'cat', name: '流浪猫', title: 'Street Cat', color: '#ffb703',
+    avatar: '🐈',
+    desc: '你最大的梦想是晒太阳和不被驱赶。',
+    stats: { mood: 80, money: 10, luck: 60, crazy: 40 }
+  },
+  {
+    id: 'student', name: '大学生', title: 'Deadline Survivor', color: '#00d0ff',
+    avatar: '🎓',
+    desc: '你在DDL和早八之间挣扎求生。',
+    stats: { mood: 55, money: 25, luck: 55, crazy: 50 }
+  },
+  {
+    id: 'worker', name: '社畜', title: 'Corporate Slave', color: '#ff4ecd',
+    avatar: '💼',
+    desc: '你每天都在等下班通知。',
+    stats: { mood: 35, money: 65, luck: 35, crazy: 70 }
+  },
+  {
+    id: 'founder', name: '创业者', title: 'Dream Chaser', color: '#00ff99',
+    avatar: '🚀',
+    desc: '你坚信下一个风口属于自己。',
+    stats: { mood: 60, money: 45, luck: 70, crazy: 65 }
+  },
+  {
+    id: 'alien', name: '外星人', title: 'Unknown Visitor', color: '#9b5cff',
+    avatar: '👽',
+    desc: '你假装自己是普通地球人。',
+    stats: { mood: 50, money: 50, luck: 90, crazy: 90 }
+  }
+];
+
+/* =========================================
+   事件 (保持最新丰富后的事件库)
+   ========================================= */
+const EVENTS = {
+  cat: [
+    { text: "你在垃圾桶里发现一份‘猫界公务员考试通知’。", a: "报名参加", b: "继续躺平", da: { mood: -5, crazy: 10 }, db: { mood: 5 }, ar: "你成为编制猫，每天巡视三条街。", br: "你被流浪猫尊为‘躺平圣贤’。" },
+    { text: "一只鸽子嘲笑你不会飞。", a: "挑战飞跃屋顶", b: "用眼神攻击", da: { crazy: 15, luck: 5 }, db: { mood: 3 }, ar: "你摔进外卖箱，获得新身份：炸鸡守护者。", br: "鸽子精神崩溃，辞职不飞了。" },
+    { text: "人类开始用‘猫税’规范你的晒太阳时间。", a: "抗议喵喵游行", b: "偷偷换地方晒太阳", da: { crazy: 10 }, db: { mood: 8 }, ar: "你成为猫权革命领袖。", br: "你成功躲过税务局巡查。" },
+    { text: "一个小孩想把你带回家，但他妈妈过敏。", a: "主动表演可爱", b: "装作凶猛野猫", da: { mood: 10, luck: 5 }, db: { crazy: 8 }, ar: "小孩哭闹成功说服妈妈带你回家。", br: "你成功维持了流浪猫的自由尊严。" },
+    { text: "附近的猫咖店在招聘‘驻场猫网红’。", a: "去试镜", b: "拒绝被商业化", da: { money: 20, mood: -10 }, db: { mood: 15 }, ar: "你日均引流300人，但每天被摸爆了。", br: "你的自由灵魂无价。" },
+    { text: "一只狗追你追了三条街，你累了。", a: "回头决战", b: "爬上电线杆等它走", da: { crazy: 12, mood: -5 }, db: { luck: 8 }, ar: "你揍赢了，狗圈都知道了你的名字。", br: "你在电线杆上看完了一个日落。" }
+  ],
+  student: [
+    { text: "AI帮你写完作业，还顺手写了你的遗书模板。", a: "感谢AI", b: "删除AI", da: { crazy: 12 }, db: { mood: -5 }, ar: "AI开始替你上课。", br: "你恢复了纯手写痛苦人生。" },
+    { text: "舍友在凌晨三点煮火锅并讨论宇宙起源。", a: "加入哲学火锅局", b: "戴耳塞装死", da: { mood: 10, crazy: 10 }, db: { mood: -3 }, ar: "你们发现火锅可以预测期末题。", br: "你错过一次宇宙级顿悟。" },
+    { text: "教务系统突然提示：你已毕业（但你才大二）。", a: "直接领毕业证", b: "人工申诉", da: { money: 20, crazy: 15 }, db: { luck: -5 }, ar: "你提前进入社会副本。", br: "系统把你当Bug修复了。" },
+    { text: "期末周你发现图书馆有人在睡觉占座七天了。", a: "拍照上热搜", b: "向他学习", da: { luck: 10, crazy: 5 }, db: { mood: 8 }, ar: "那人成了学校传说，你是唯一目击者。", br: "你悟出了考试周生存哲学。" },
+    { text: "导师说你的论文选题‘有点意思，但太小众’。", a: "改成更主流的方向", b: "坚持研究下去", da: { money: 10, mood: -8 }, db: { crazy: 10, luck: 5 }, ar: "论文顺利过审，你失去了一点灵魂。", br: "你开始写一篇没人看但你爱的东西。" },
+    { text: "学校食堂推出‘卷王套餐’，价格是普通套餐三倍。", a: "买！冲！", b: "自带泡面抵制", da: { money: -15, mood: 5 }, db: { mood: -5, crazy: 8 }, ar: "你吃到了传说中的‘努力香味’。", br: "你在宿舍发起了反消费主义运动。" }
+  ],
+  worker: [
+    { text: "公司引入AI，你的工作变成‘假装有工作’。", a: "认真假装", b: "认真摸鱼", da: { money: 10, crazy: 5 }, db: { mood: 8 }, ar: "你被评为‘最真实AI替代品’。", br: "你晋升为摸鱼主管。" },
+    { text: "老板发消息：‘在吗？’但已经凌晨4点。", a: "秒回在", b: "假装外星人劫持手机", da: { money: 5, crazy: 10 }, db: { mood: -10 }, ar: "你获得凌晨召唤者称号。", br: "老板开始怀疑宇宙存在。" },
+    { text: "公司推出‘快乐上班制度’但必须笑出声打卡。", a: "专业笑声训练", b: "录音循环播放", da: { money: 8, crazy: 12 }, db: { mood: -5 }, ar: "你成为笑声KPI冠军。", br: "系统判定你情绪异常。" },
+    { text: "HR说下季度绩效考核改成‘内卷指数评分’。", a: "全力卷到顶", b: "假装没看到邮件", da: { money: 15, mood: -15 }, db: { mood: 5, luck: -5 }, ar: "你拿了奖金，但头发少了一半。", br: "你在邮件浪潮里获得了短暂的宁静。" },
+    { text: "同事拉你入伙做副业，卖‘焦虑缓解水晶’。", a: "入伙", b: "拒绝但买了一颗", da: { money: 20, crazy: 15 }, db: { mood: 5 }, ar: "你的第一个水晶卖给了你的老板。", br: "你把水晶放在工位上，感觉好多了。" },
+    { text: "公司组织‘团建跑步’，但是周六凌晨六点。", a: "积极参加", b: "发烧请假（没发烧）", da: { mood: -10, money: 5 }, db: { mood: 10, luck: -5 }, ar: "你获得了‘狼性先锋’奖杯。", br: "你睡到中午，这一天无比美好。" }
+  ],
+  founder: [
+    { text: "投资人说你的项目‘很有想象力（但像做梦）’。", a: "继续融资路演", b: "改行卖煎饼", da: { money: -10, crazy: 15 }, db: { money: 10, mood: 5 }, ar: "你成功融资空气币项目。", br: "煎饼摊成为独角兽企业。" },
+    { text: "你的产品被AI自动复制1000个版本。", a: "打不过就加入", b: "起诉AI", da: { crazy: 10 }, db: { luck: -5 }, ar: "你成为AI生态一部分。", br: "你赢了官司但输了市场。" },
+    { text: "用户反馈：你的产品很好用，但没人知道是干嘛的。", a: "强化概念包装", b: "直接改名玄学产品", da: { money: 15, crazy: 12 }, db: { mood: 5 }, ar: "你进入概念经济时代。", br: "产品变成赛博护身符。" },
+    { text: "你的联合创始人昨晚出走，带走了密码和猫。", a: "发律师函", b: "默默修改密码再买只猫", da: { money: -5, crazy: 10 }, db: { mood: -5, luck: 8 }, ar: "你们和解了，猫成了公司吉祥物。", br: "你的新猫叫‘重新出发’。" },
+    { text: "媒体要采访你，称你为‘这代人的创业精神’。", a: "接受采访大谈愿景", b: "婉拒，专心做产品", da: { money: 10, crazy: 8 }, db: { luck: 10 }, ar: "你上了头条，但没人下载你的App。", br: "你悄悄把版本从0.1更新到了0.2。" },
+    { text: "你发现你的竞争对手是你的大学同学。", a: "约他喝咖啡谈合并", b: "全力竞争", da: { money: 20, mood: 5 }, db: { money: -5, crazy: 12 }, ar: "你们合并了，股权分配吵了半年。", br: "你获得了一段可歌可泣的商战回忆。" }
+  ],
+  alien: [
+    { text: "地球人怀疑你是AI，但你其实在怀疑他们。", a: "启动反观察计划", b: "装作普通人", da: { crazy: 20 }, db: { mood: 5 }, ar: "你成功混入人类数据库。", br: "你差点通过图灵测试。" },
+    { text: "你的母星发来消息：请停止社交媒体冲浪。", a: "假装没收到", b: "回母星申请延长地球假期", da: { crazy: 15 }, db: { luck: 10 }, ar: "你被停职观察宇宙文明。", br: "母星批准你继续摸鱼。" },
+    { text: "人类邀请你参加‘正常人类行为培训班’。", a: "认真学习微笑", b: "展示外星礼仪", da: { crazy: 10 }, db: { mood: -5 }, ar: "你成为优秀人类样本。", br: "培训班紧急关闭。" },
+    { text: "你不小心用外星语言回复了老板的微信。", a: "说是输入法故障", b: "坚持说那是方言", da: { luck: 10, crazy: 5 }, db: { crazy: 15 }, ar: "老板信了，还夸你很有个性。", br: "老板开始学你的‘方言’。" },
+    { text: "有人开始写关于你的纪录片，标题是‘ta不像地球人’。", a: "配合拍摄", b: "悄悄毁掉所有素材", da: { mood: 10, crazy: 15 }, db: { luck: -5 }, ar: "纪录片在宇宙频道播出了。", br: "你成功保住了身份，但很累。" },
+    { text: "地球的咖啡让你产生了情感，母星不允许有情感。", a: "继续喝，管它呢", b: "戒掉咖啡回归理性", da: { mood: 15, crazy: 10 }, db: { mood: -10, luck: 5 }, ar: "你爱上了地球，忘记了回家的路。", br: "你保持了冷静，但偶尔想念那杯拿铁。" }
+  ]
+};
+
+/* =========================================
+   结局
+   ========================================= */
+const ENDINGS = {
+  cat: [
+    { title: "猫界神明",   desc: "你被供奉在所有垃圾桶之上。" },
+    { title: "罐头资本家", desc: "你垄断了整个城市的鱼罐头市场。" },
+    { title: "流浪哲学家", desc: "你在屋顶讲述存在主义喵喵论。" }
+  ],
+  student: [
+    { title: "延毕仙人",       desc: "你在校园修炼了八年青春。" },
+    { title: "AI替身毕业生",   desc: "你的论文由AI和运气共同完成。" },
+    { title: "知识逃逸者",     desc: "你成功逃离所有考试系统。" }
+  ],
+  worker: [
+    { title: "摸鱼之神", desc: "公司因你摸鱼效率提升而上市。" },
+    { title: "工位幽灵", desc: "你的存在只体现在打卡系统里。" },
+    { title: "加班成仙", desc: "你在凌晨三点悟道升天。" }
+  ],
+  founder: [
+    { title: "空气独角兽", desc: "你的公司估值来自想象力。" },
+    { title: "失败学大师", desc: "你开设创业失败课程爆红。" },
+    { title: "风口制造机", desc: "你本身就是一个风口。" }
+  ],
+  alien: [
+    { title: "地球观察主管", desc: "你写报告说人类是实验性物种。" },
+    { title: "系统外生命",   desc: "你被踢出宇宙文明名单。" },
+    { title: "误入人间",     desc: "你再也回不去母星WiFi。" }
+  ]
+};
+
+/* =========================================
+   紧急结局（stats 触发）
+   ========================================= */
+const CRISIS_ENDINGS = {
+  crazy:  { title: "精神超载",   desc: "你的离谱值爆表，宇宙选择了你。" },
+  money:  { title: "赛博破产",   desc: "你的财富归零，但精神依然富有。" },
+  mood:   { title: "情绪崩塌",   desc: "你的心态降至冰点，决定躺平永久。" }
+};
+
+/* =========================================
+   状态
+   ========================================= */
+const state = {
+  usedEvents:  new Set(),
+  scrollY:     0,
+  velocity:    0,
+  isDragging:  false,
+  lastY:       0,
+  scene:       'select',
+  selected:    0,
+  step:        0,
+  shake:       0,
+  transition:  0,
+  collection:  { endings: [], characters: [] },
+  stats:       { mood: 50, money: 50, luck: 50, crazy: 50 },
+  current:     null,
+  result:      '',
+  ending:      null,
+  share:       '',
+  toast:       '',
+  history:     [],
+  profile:     null,
+  loading:     false,
+  runId:       0,
+  choosing:    false, // 防止狂点按钮
+  maxSteps:    TOTAL_STEPS
+};
+
+let buttons = [];
+
+/* =========================================
+   存档系统
+   ========================================= */
+function saveCollection() {
+  localStorage.setItem('cyberLifeCollection', JSON.stringify(state.collection));
+}
+
+function loadCollection() {
+  const data = localStorage.getItem('cyberLifeCollection');
+  if (data) {
+    try { state.collection = JSON.parse(data); } catch (e) { console.error(e); }
+  }
+}
+
+function addEndingToCollection(ending) {
+  if (ending && !state.collection.endings.includes(ending.title)) {
+    state.collection.endings.push(ending.title);
+    saveCollection();
+  }
+}
+
+/* =========================================
+   UI
+   ========================================= */
 function drawBackground(t) {
   const bg = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
-  bg.addColorStop(0, "#0f172a");
-  bg.addColorStop(1, "#020617");
+  bg.addColorStop(0, '#0f172a');
+  bg.addColorStop(1, '#020617');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
-
   for (let i = 0; i < 5; i++) {
     const x = 100 + Math.sin(t * 0.0004 + i) * 160;
     const y = 200 + Math.cos(t * 0.0006 + i) * 220;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, 120);
+    const r = 120;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, `rgba(${i % 2 ? 255 : 0},180,255,.12)`);
-    g.addColorStop(1, "transparent");
+    g.addColorStop(1, 'transparent');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(x, y, 120, 0, Math.PI * 2);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
 function drawTitle() {
-  const grad = ctx.createLinearGradient(40, 0, 500, 0);
-  grad.addColorStop(0, "#00d0ff");
-  grad.addColorStop(0.5, "white");
-  grad.addColorStop(1, "#ff4ecd");
+  const grad = ctx.createLinearGradient(100, 0, 400, 0);
+  grad.addColorStop(0, '#00d0ff');
+  grad.addColorStop(0.5, 'white');
+  grad.addColorStop(1, '#ff4ecd');
   ctx.fillStyle = grad;
   ctx.shadowBlur = 20;
-  ctx.shadowColor = "#00d0ff";
+  ctx.shadowColor = '#00d0ff';
   ctx.font = FONT_TITLE;
-  ctx.textAlign = "center";
-  ctx.fillText("一分钟人生岔路口", LOGICAL_W / 2, 86);
+  ctx.fillText('CYBER LIFE', 90, 100);
   ctx.shadowBlur = 0;
-  ctx.textAlign = "left";
 }
 
 function drawCard(x, y, w, h, color) {
   ctx.save();
   const grad = ctx.createLinearGradient(x, y, x, y + h);
-  grad.addColorStop(0, "rgba(255,255,255,.08)");
-  grad.addColorStop(1, "rgba(255,255,255,.02)");
+  grad.addColorStop(0, 'rgba(255,255,255,.08)');
+  grad.addColorStop(1, 'rgba(255,255,255,.02)');
   ctx.fillStyle = grad;
-  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  ctx.strokeStyle = 'rgba(255,255,255,.08)';
   ctx.lineWidth = 1.2;
   ctx.shadowBlur = 20;
   ctx.shadowColor = color;
@@ -290,364 +338,557 @@ function drawCard(x, y, w, h, color) {
   ctx.restore();
 }
 
-function drawButton(x, y, w, h, text, color, disabled = false) {
+function drawButton(x, y, w, h, text, color) {
   ctx.save();
   const grad = ctx.createLinearGradient(x, y, x, y + h);
-  grad.addColorStop(0, disabled ? "rgba(120,130,150,.55)" : color);
-  grad.addColorStop(1, "#111827");
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, '#111827');
   ctx.fillStyle = grad;
-  ctx.shadowBlur = disabled ? 0 : 18;
+  ctx.shadowBlur = 20;
   ctx.shadowColor = color;
   roundRect(x, y, w, h, 22);
   ctx.fill();
-  ctx.fillStyle = disabled ? "rgba(255,255,255,.65)" : "white";
-  ctx.font = "700 18px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const lines = splitText(text, w - 26).slice(0, 2);
-  lines.forEach((line, i) => ctx.fillText(line, x + w / 2, y + h / 2 + (i - (lines.length - 1) / 2) * 24));
+  ctx.fillStyle = 'white';
+  ctx.font = '700 20px Rajdhani';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + w / 2, y + h / 2);
   ctx.restore();
 }
 
 function drawToast() {
   if (!state.toast) return;
-  drawCard(42, 884, 456, 48, "#ffd166");
-  ctx.fillStyle = "#ffd166";
+  drawCard(50, 885, 440, 46, '#ffd166');
+  ctx.fillStyle = '#ffd166';
   ctx.font = FONT_SMALL;
-  ctx.textAlign = "center";
-  ctx.fillText(state.toast, LOGICAL_W / 2, 914);
-  ctx.textAlign = "left";
+  ctx.textAlign = 'center';
+  splitText(state.toast, 390).slice(0, 1).forEach(line => ctx.fillText(line, LOGICAL_W / 2, 914));
+  ctx.textAlign = 'left';
 }
 
-function drawSelect() {
+/* =========================================
+   角色选择 (UI已完全还原)
+   ========================================= */
+function drawSelect(t) {
   buttons = [];
   drawTitle();
-  ctx.fillStyle = "rgba(255,255,255,.64)";
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
   ctx.font = FONT_TEXT;
-  ctx.fillText("选择你的人生身份", 150, 132);
+  ctx.fillText('选择你的人生身份', 120, 160);
 
-  ROLES.forEach((role, i) => {
-    const y = 170 + i * 130;
+  CHARACTERS.forEach((c, i) => {
+    const baseY = 190 + i * 145;
+    const y = baseY + state.scrollY;
     const selected = state.selected === i;
-    drawCard(40, y, 460, 108, role.color);
+    drawCard(50, y, 440, 120, c.color);
     if (selected) {
-      ctx.strokeStyle = role.color;
+      ctx.strokeStyle = c.color;
       ctx.lineWidth = 3;
-      roundRect(40, y, 460, 108, 28);
+      roundRect(50, y, 440, 120, 28);
       ctx.stroke();
     }
-    ctx.fillStyle = role.color;
-    ctx.font = "900 34px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-    ctx.fillText(role.avatar, 70, y + 66);
-    ctx.fillStyle = "white";
+
+    // UI 完全恢复你原版的排版
+    ctx.fillStyle = c.color;
+    ctx.font = '900 52px Orbitron';
+    ctx.fillText(c.avatar, 80, y + 95);
+    ctx.fillStyle = 'white';
     ctx.font = FONT_BIG;
-    ctx.fillText(role.name, 125, y + 42);
+    ctx.fillText(c.name, 160, y + 58);
     ctx.font = FONT_SMALL;
-    ctx.fillStyle = "rgba(255,255,255,.74)";
-    ctx.fillText(role.title, 125, y + 70);
-    buttons.push({ id: `char${i}`, x: 40, y, w: 460, h: 108 });
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.fillText(c.title, 160, y + 88);
+    const lines = splitText(c.desc, 260);
+    lines.forEach((line, k) => {
+      ctx.fillText(line, 160, y + 120 + k * 22);
+    });
+
+    buttons.push({ id: 'char' + i, x: 50, y, w: 440, h: 120 });
   });
 
-  drawButton(140, 850, 260, 62, "进入人生", ROLES[state.selected].color);
-  buttons.push({ id: "start", x: 140, y: 850, w: 260, h: 62 });
+  const startY      = 950 + state.scrollY;
+  const collectionY = 1035 + state.scrollY;
+  drawButton(140, startY, 260, 60, '进入人生', CHARACTERS[state.selected].color);
+  drawButton(140, collectionY, 260, 50, '人生图鉴', '#ff4ecd');
+  buttons.push({ id: 'start',      x: 140, y: startY,      w: 260, h: 60 });
+  buttons.push({ id: 'collection', x: 140, y: collectionY, w: 260, h: 50 });
+
+  const maxScroll = 0;
+  const minScroll = -((CHARACTERS.length - 3) * 145);
+  state.scrollY  += state.velocity;
+  state.velocity *= 0.92;
+  if (state.scrollY > maxScroll) { state.scrollY *= 0.2; state.velocity = 0; }
+  if (state.scrollY < minScroll) { state.scrollY += (minScroll - state.scrollY) * 0.2; state.velocity = 0; }
 }
 
+/* =========================================
+   开局档案 (UI已完全还原)
+   ========================================= */
 function drawProfile() {
-  const role = state.profile;
+  const c = state.profile;
   drawTitle();
-  drawCard(50, 180, 440, 440, role.color);
-  ctx.fillStyle = role.color;
-  ctx.font = "900 76px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(role.avatar, 270, 306);
-  ctx.fillStyle = "white";
-  ctx.font = "800 34px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  ctx.fillText(role.name, 270, 374);
-  ctx.font = FONT_TEXT;
-  ctx.fillStyle = "rgba(255,255,255,.75)";
-  ctx.fillText(role.title, 270, 414);
-  ctx.textAlign = "left";
+  drawCard(50, 220, 440, 420, c.color);
 
-  const statLines = [
-    ["心态", role.stats.mood],
-    ["钱包", role.stats.money],
-    ["运气", role.stats.luck],
-    ["离谱值", role.stats.crazy]
+  ctx.fillStyle = c.color;
+  ctx.font = '900 100px Orbitron';
+  ctx.fillText(c.avatar, 200, 360);
+  ctx.fillStyle = 'white';
+  ctx.font = '700 36px Rajdhani';
+  ctx.fillText(c.name, 150, 450);
+  ctx.font = FONT_TEXT;
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.fillText(c.title, 170, 490);
+
+  const stats = [
+    ['心态', c.stats.mood],
+    ['财富', c.stats.money],
+    ['运气', c.stats.luck],
+    ['离谱', c.stats.crazy]
   ];
-  statLines.forEach((item, i) => {
-    ctx.fillStyle = "white";
-    ctx.font = FONT_TEXT;
-    ctx.fillText(`${item[0]} ${item[1]}`, 130, 485 + i * 34);
+  stats.forEach((s, i) => {
+    const y = 560 + i * 42;
+    ctx.fillStyle = 'white';
+    ctx.fillText(`${s[0]} ${s[1]}`, 100, y);
   });
 
-  drawButton(150, 760, 240, 70, "开始人生", role.color);
-  buttons = [{ id: "play", x: 150, y: 760, w: 240, h: 70 }];
+  drawButton(150, 760, 240, 70, '开始人生', c.color);
+  buttons = [{ id: 'play', x: 150, y: 760, w: 240, h: 70 }];
 }
 
+/* =========================================
+   游戏
+   ========================================= */
 function drawStats() {
-  const labels = [
-    ["心态", "mood"],
-    ["钱包", "money"],
-    ["运气", "luck"],
-    ["离谱值", "crazy"]
-  ];
-  labels.forEach((item, i) => {
+  const keys = [['心态', 'mood'], ['财富', 'money'], ['运气', 'luck'], ['离谱', 'crazy']];
+  keys.forEach((k, i) => {
     const x = 40;
-    const y = 60 + i * 38;
-    ctx.fillStyle = "rgba(255,255,255,.08)";
+    const y = 70 + i * 38;
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
     roundRect(x, y, 180, 14, 7);
     ctx.fill();
     ctx.fillStyle = state.profile.color;
-    roundRect(x, y, 180 * (state.stats[item[1]] / 100), 14, 7);
+    roundRect(x, y, 180 * (state.stats[k[1]] / 100), 14, 7);
     ctx.fill();
-    ctx.fillStyle = "white";
+    ctx.fillStyle = 'white';
     ctx.font = FONT_SMALL;
-    ctx.fillText(`${item[0]} ${state.stats[item[1]]}`, x, y - 6);
+    ctx.fillText(`${k[0]} ${state.stats[k[1]]}`, x, y - 6);
   });
 }
 
-function drawGame() {
+function drawGame(t) {
   buttons = [];
   drawStats();
-  ctx.fillStyle = state.profile.color;
-  ctx.font = FONT_SMALL;
-  ctx.textAlign = "right";
-  ctx.fillText(`第 ${Math.min(state.step + 1, TOTAL_STEPS)} / ${TOTAL_STEPS} 步`, 498, 70);
-  ctx.textAlign = "left";
+  const event = state.current || { text: '命运生成中……\nAI 正在续写你的下一幕。', a: '等待', b: '稍等' };
 
-  drawCard(40, 230, 460, 270, state.profile.color);
-  ctx.fillStyle = "white";
+  drawCard(40, 260, 460, 260, state.profile.color);
+  ctx.fillStyle = 'white';
   ctx.font = FONT_TEXT;
-  const text = state.loading ? "命运生成中……\nAI 正在实时续写你的下一幕。" : (state.current && state.current.text) || "命运正在加载。";
-  splitText(text, 380).slice(0, 5).forEach((line, i) => ctx.fillText(line, 78, 305 + i * 36));
+  const storyText = state.loading ? '命运生成中……\nAI 正在续写你的下一幕。' : event.text;
+  const lines = splitText(storyText, 360).slice(0, 5);
+  lines.forEach((line, i) => {
+    ctx.fillText(line, 80, 340 + i * 38);
+  });
 
   if (state.loading) {
-    drawButton(120, 640, 300, 78, "生成中……", state.profile.color, true);
+    drawButton(140, 650, 260, 72, '生成中...', '#374151');
     return;
   }
 
   if (state.result) {
-    drawCard(50, 580, 440, 150, "#ffd166");
-    ctx.fillStyle = "#ffd166";
+    drawCard(50, 600, 440, 160, '#ffd166');
+    ctx.fillStyle = '#ffd166';
     ctx.font = FONT_SMALL;
-    ctx.fillText("这一选择带来的结果", 78, 620);
-    ctx.fillStyle = "white";
+    ctx.fillText('这一选择带来的结果', 80, 636);
+    ctx.fillStyle = 'white';
     ctx.font = FONT_TEXT;
-    splitText(state.result, 380).slice(0, 3).forEach((line, i) => ctx.fillText(line, 78, 660 + i * 32));
-    const label = state.step >= TOTAL_STEPS ? "查看结局" : "确定，进入下一幕";
-    drawButton(120, 790, 300, 70, label, state.profile.color);
-    buttons.push({ id: "continue", x: 120, y: 790, w: 300, h: 70 });
+    splitText(state.result, 370).slice(0, 3).forEach((line, i) => {
+      ctx.fillText(line, 80, 678 + i * 32);
+    });
+    drawButton(140, 800, 260, 70, state.step >= state.maxSteps ? '查看结局' : '确定继续', state.profile.color);
+    buttons.push({ id: 'continue', x: 140, y: 800, w: 260, h: 70 });
     return;
   }
 
-  if (!state.current) return;
-  drawButton(70, 640, 180, 90, state.current.a, state.profile.color, state.locked);
-  drawButton(290, 640, 180, 90, state.current.b, "#374151", state.locked);
-  buttons.push({ id: "a", x: 70, y: 640, w: 180, h: 90 });
-  buttons.push({ id: "b", x: 290, y: 640, w: 180, h: 90 });
+  // 如果正在等待结算，按钮变灰
+  const colorA = state.choosing ? '#444' : state.profile.color;
+  const colorB = state.choosing ? '#222' : '#374151';
+  drawButton(70,  640, 180, 90, event.a, colorA);
+  drawButton(290, 640, 180, 90, event.b, colorB);
+
+  if (!state.choosing) {
+    buttons.push({ id: 'a', x: 70,  y: 640, w: 180, h: 90 });
+    buttons.push({ id: 'b', x: 290, y: 640, w: 180, h: 90 });
+  }
 }
 
+/* =========================================
+   结局 (UI已完全还原)
+   ========================================= */
 function drawEnding() {
+  drawTitle();
+  drawCard(50, 170, 440, 480, state.profile.color);
+
+  ctx.fillStyle = state.profile.color;
+  ctx.font = '900 64px Orbitron';
+  ctx.fillText(state.profile.avatar, 218, 285);
+  ctx.fillStyle = 'white';
+  ctx.font = '700 30px Rajdhani';
+  splitText(state.ending.title, 340).slice(0, 2).forEach((line, i) => ctx.fillText(line, 100, 365 + i * 38));
+  ctx.font = '600 18px Rajdhani';
+  splitText(state.ending.desc, 360).slice(0, 7).forEach((line, i) => ctx.fillText(line, 90, 465 + i * 28));
+
+  if (state.share) {
+    drawCard(50, 680, 440, 88, '#00d0ff');
+    ctx.fillStyle = 'rgba(255,255,255,.86)';
+    ctx.font = FONT_SMALL;
+    splitText(state.share, 390).slice(0, 3).forEach((line, i) => ctx.fillText(line, 75, 712 + i * 22));
+  }
+
+  drawButton(70, 815, 180, 66, '复制文案', state.share ? state.profile.color : '#374151');
+  drawButton(290, 815, 180, 66, '重新开始', '#374151');
+  buttons = [
+    { id: 'copy', x: 70, y: 815, w: 180, h: 66 },
+    { id: 'restart', x: 290, y: 815, w: 180, h: 66 }
+  ];
+}
+
+/* =========================================
+   图鉴界面 (UI已完全还原)
+   ========================================= */
+function drawCollection() {
+  loadCollection();
   buttons = [];
   drawTitle();
-  drawCard(42, 150, 456, 500, state.profile.color);
-  ctx.fillStyle = state.profile.color;
-  ctx.font = "900 58px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(state.profile.avatar, 270, 260);
-  ctx.fillStyle = "white";
-  ctx.font = "800 26px \"PingFang SC\", \"Microsoft YaHei\", sans-serif";
-  splitText(state.ending.title, 380).slice(0, 2).forEach((line, i) => ctx.fillText(line, 270, 330 + i * 34));
-  ctx.font = '700 18px "PingFang SC", "Microsoft YaHei", sans-serif';
-  const descLines = splitText(state.ending.desc, 372).slice(0, 7);
-  descLines.forEach((line, i) => ctx.fillText(line, 270, 425 + i * 28));
-  ctx.textAlign = "left";
+  ctx.fillStyle = 'white';
+  ctx.font = FONT_BIG;
+  ctx.fillText('人生图鉴 COLLECTION', 90, 150);
 
-  drawCard(50, 680, 440, 94, "#00d0ff");
-  ctx.fillStyle = "rgba(255,255,255,.85)";
-  ctx.font = '600 14px "PingFang SC", "Microsoft YaHei", sans-serif';
-  splitText(state.share, 390).slice(0, 3).forEach((line, i) => ctx.fillText(line, 76, 708 + i * 22));
+  // 角色图鉴
+  ctx.font = FONT_TEXT;
+  ctx.fillStyle = '#00d0ff';
+  CHARACTERS.forEach((c, i) => {
+    const unlocked = state.collection.characters.includes(c.id);
+    const x = 60 + (i % 2) * 220;
+    const y = 250 + Math.floor(i / 2) * 130 + state.scrollY;
+    drawCard(x, y, 180, 100, unlocked ? c.color : '#374151');
+    ctx.globalAlpha = unlocked ? 1 : 0.3;
+    ctx.font = '50px Orbitron';
+    ctx.fillStyle = 'white';
+    ctx.fillText(unlocked ? c.avatar : '?', x + 20, y + 65);
+    ctx.font = FONT_SMALL;
+    ctx.fillText(unlocked ? c.name : '未解锁', x + 80, y + 60);
+    ctx.globalAlpha = 1;
+  });
 
-  drawButton(70, 820, 180, 68, "复制文案", state.profile.color, !state.share);
-  drawButton(290, 820, 180, 68, "重新开始", "#374151");
-  buttons.push({ id: "copy", x: 70, y: 820, w: 180, h: 68 });
-  buttons.push({ id: "restart", x: 290, y: 820, w: 180, h: 68 });
+  // 结局图鉴
+  ctx.fillStyle = '#ff4ecd';
+  ctx.font = FONT_TEXT;
+  // 直接展平用于绘制高度计算
+  const allEndingsList = Object.values(ENDINGS).flat();
+  allEndingsList.forEach((e, i) => {
+    const unlocked = state.collection.endings.includes(e.title);
+    const y = 600 + i * 70 + state.scrollY;
+    drawCard(60, y, 420, 55, unlocked ? '#ff4ecd' : '#374151');
+    ctx.fillStyle = 'white';
+    ctx.font = FONT_SMALL;
+    ctx.fillText(unlocked ? e.title : '？？？？', 90, y + 35);
+  });
+
+  const contentHeight = 600 + allEndingsList.length * 70 + 100;
+  const viewHeight = LOGICAL_H;
+  const minScroll = -(contentHeight - viewHeight);
+  const maxScroll = 0;
+
+  state.scrollY  += state.velocity;
+  state.velocity *= 0.92;
+  if (state.scrollY > maxScroll) { state.scrollY *= 0.2; state.velocity = 0; }
+  if (state.scrollY < minScroll) { state.scrollY += (minScroll - state.scrollY) * 0.2; state.velocity = 0; }
+
+  drawButton(140, 880, 260, 60, '返回', '#00d0ff');
+  buttons.push({ id: 'back', x: 140, y: 880, w: 260, h: 60 });
+}
+
+/* =========================================
+   游戏逻辑
+   ========================================= */
+
+// 修复事件重复问题：取消清空机制，真正做到不重复
+function pickRandomEvent() {
+  const list = EVENTS[state.profile.id];
+  let available = [];
+  for (let i = 0; i < list.length; i++) {
+    if (!state.usedEvents.has(i)) available.push(i);
+  }
+
+  // 防御性拦截：如果真没事件了直接结束游戏（新逻辑下理论不会触发）
+  if (available.length === 0) {
+    finishGame();
+    return;
+  }
+
+  const idx = available[Math.floor(Math.random() * available.length)];
+  state.usedEvents.add(idx);
+  state.current = list[idx];
 }
 
 function startProfile() {
-  state.profile = ROLES[state.selected];
-  state.stats = JSON.parse(JSON.stringify(state.profile.stats));
-  state.scene = "profile";
-  state.toast = "";
-  addParticleBurst(particleSystem, 270, 300, 60, state.profile.color);
+  state.profile = CHARACTERS[state.selected];
+  state.stats   = JSON.parse(JSON.stringify(state.profile.stats));
+  if (!state.collection.characters.includes(state.profile.id)) {
+    state.collection.characters.push(state.profile.id);
+    saveCollection();
+  }
+  state.scene = 'profile';
+  addParticleBurst(particleSystem, 270, 300, 60);
 }
 
 function startGame() {
-  state.runId += 1;
-  state.scene = "game";
-  state.step = 0;
-  state.history = [];
-  state.usedLocal = new Set();
-  state.result = "";
-  state.current = null;
-  loadNextEvent(state.runId);
-}
+  state.scene    = 'game';
+  state.step     = 0;
+  state.result   = '';
+  state.share    = '';
+  state.toast    = '';
+  state.history  = [];
+  state.choosing = false;
+  state.loading  = false;
+  state.runId++;
+  state.maxSteps = TOTAL_STEPS;
 
-function localEvent() {
-  const pool = LOCAL_EVENTS[state.profile.id] || LOCAL_EVENTS.student;
-  const available = pool.filter((_, i) => !state.usedLocal.has(i));
-  const chosen = available.length ? pick(available) : pick(pool);
-  const idx = pool.indexOf(chosen);
-  state.usedLocal.add(idx);
-  return chosen;
+  state.usedEvents.clear();
+  loadNextEvent(state.runId);
 }
 
 async function loadNextEvent(runId) {
   state.loading = true;
-  state.locked = true;
-  state.toast = "命运生成中……";
+  state.choosing = true;
+  state.toast = '命运生成中……';
   try {
-    const data = await postJson("/api/next", {
+    const data = await postJson('/api/next', {
       role: state.profile.name,
       step: state.step + 1,
       stats: state.stats,
       history: apiHistory()
     });
     if (runId !== state.runId) return;
-    state.current = normalizeApiEvent(data) || localEvent();
-    state.toast = "";
+    state.current = normalizeApiEvent(data) || pickFallbackEvent();
+    state.toast = '';
   } catch (_) {
     if (runId !== state.runId) return;
-    state.current = localEvent();
-    state.toast = "API 暂不可用，已使用本地剧情。";
+    state.current = pickFallbackEvent();
+    state.toast = 'API 暂不可用，已使用本地剧情。';
   } finally {
     if (runId === state.runId) {
       state.loading = false;
-      state.locked = false;
+      state.choosing = false;
     }
   }
 }
 
-function choose(side) {
-  if (state.locked || state.loading || state.result || !state.current) return;
-  const e = state.current;
-  const choice = side === 0
-    ? { text: e.a, result: e.ar, delta: e.da }
-    : { text: e.b, result: e.br, delta: e.db };
-  applyDelta(choice.delta);
-  state.result = choice.result;
-  state.history.push({ story: e.text, choice: choice.text, result: choice.result });
-  state.step += 1;
-  state.locked = true;
-  addParticleBurst(particleSystem, random(100, 400), random(300, 700), 36, state.profile.color);
+function pickFallbackEvent() {
+  pickRandomEvent();
+  return state.current;
 }
 
-function applyDelta(delta) {
-  for (const key of STAT_KEYS) {
-    state.stats[key] = clamp(state.stats[key] + (delta[key] || 0), 0, 100);
+function choose(side) {
+  if (state.choosing || state.loading || state.result) return;
+  state.choosing = true;
+
+  const e = state.current;
+  let choiceText = '';
+  if (side === 0) {
+    state.result = e.ar;
+    choiceText = e.a;
+    applyDelta(e.da);
+  } else {
+    state.result = e.br;
+    choiceText = e.b;
+    applyDelta(e.db);
   }
+
+  state.history.push({ story: e.text, choice: choiceText, result: state.result });
+  addParticleBurst(particleSystem, random(100, 400), random(300, 700), 30);
+  state.step++;
 }
 
 function continueGame() {
   if (!state.result) return;
-  state.result = "";
-  if (state.step >= TOTAL_STEPS) {
+  state.result = '';
+  if (state.step >= state.maxSteps) {
     finishGame();
-    return;
+  } else {
+    loadNextEvent(state.runId);
   }
-  loadNextEvent(state.runId);
 }
 
-function localEnding() {
-  if (state.stats.crazy >= 78) return LOCAL_ENDINGS[1];
-  if (state.stats.money <= 15) return LOCAL_ENDINGS[2];
-  if (state.stats.mood <= 15) return LOCAL_ENDINGS[3];
-  if (state.stats.luck >= 78) return LOCAL_ENDINGS[0];
-  return LOCAL_ENDINGS[4];
+function triggerEnding(ending) {
+  state.ending = ending;
+  addEndingToCollection(ending);
+  state.scene    = 'ending';
+  state.choosing = false;
+  addParticleBurst(particleSystem, 270, 400, 120);
+}
+
+function applyDelta(delta) {
+  for (let k in delta) {
+    state.stats[k] = clamp(state.stats[k] + delta[k], 0, 100);
+  }
 }
 
 async function finishGame() {
-  state.scene = "ending";
-  state.ending = { title: "命运生成中……", desc: "AI 正在整理你的一分钟人生，请稍等。" };
-  state.share = "";
+  state.scene = 'ending';
+  state.ending = { title: '命运生成中……', desc: 'AI 正在整理你的一分钟人生，请稍等。' };
+  state.share = '';
   const runId = state.runId;
   try {
-    const data = await postJson("/api/ending", {
+    const data = await postJson('/api/ending', {
       role: state.profile.name,
       stats: state.stats,
       history: apiHistory()
     });
     if (runId !== state.runId) return;
     state.ending = {
-      title: String(data && data.title || localEnding().title).slice(0, 24),
-      desc: String(data && data.description || localEnding().desc).slice(0, 90)
+      title: String(data && data.title || '').slice(0, 24) || localEnding().title,
+      desc: String(data && data.description || '').slice(0, 90) || localEnding().desc
     };
     state.share = String(data && data.shareText || `我在《一分钟人生岔路口》里活成了：${state.ending.title}`).slice(0, 100);
   } catch (_) {
     if (runId !== state.runId) return;
     state.ending = localEnding();
     state.share = `我在《一分钟人生岔路口》里活成了：${state.ending.title}`;
-    state.toast = "API 暂不可用，已使用本地结局。";
+    state.toast = 'API 暂不可用，已使用本地结局。';
   }
-  addParticleBurst(particleSystem, 270, 400, 120, state.profile.color);
+  addEndingToCollection(state.ending);
+  state.choosing = false;
+  addParticleBurst(particleSystem, 270, 400, 120);
+}
+
+function localEnding() {
+  const s           = state.stats;
+  const role        = state.profile.id;
+  const roleEndings = ENDINGS[role];
+
+  let endingIndex = 0;
+
+  if (s.money > 75) {
+    endingIndex = 0;
+  } else if (s.crazy > 75) {
+    endingIndex = 2;
+  } else if (s.mood > 70) {
+    endingIndex = 1;
+  } else {
+    endingIndex = Math.floor(Math.random() * roleEndings.length);
+  }
+
+  endingIndex = Math.min(endingIndex, roleEndings.length - 1);
+
+  return roleEndings[endingIndex];
 }
 
 function copyShare() {
   if (!state.share) return;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(state.share)
-      .then(() => { state.toast = "分享文案已复制。"; })
-      .catch(() => { state.toast = "复制失败，可以截图分享。"; });
+      .then(() => { state.toast = '分享文案已复制。'; })
+      .catch(() => { state.toast = '复制失败，可以截图分享。'; });
   } else {
-    state.toast = "浏览器不支持复制，可以截图分享。";
+    state.toast = '浏览器不支持复制，可以截图分享。';
   }
 }
 
+/* =========================================
+   点击事件
+   ========================================= */
 function hit(x, y) {
-  return buttons.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  for (let b of buttons) {
+    if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+      return b;
+    }
+  }
+  return null;
 }
 
-canvas.addEventListener("pointerdown", e => {
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (LOGICAL_W / rect.width);
-  const y = (e.clientY - rect.top) * (LOGICAL_H / rect.height);
-  const btn = hit(x, y);
-  if (!btn) return;
-  if (btn.id.startsWith("char")) state.selected = Number(btn.id.replace("char", ""));
-  if (btn.id === "start") startProfile();
-  if (btn.id === "play") startGame();
-  if (btn.id === "a") choose(0);
-  if (btn.id === "b") choose(1);
-  if (btn.id === "continue") continueGame();
-  if (btn.id === "copy") copyShare();
-  if (btn.id === "restart") {
-    state.runId += 1;
-    state.scene = "select";
-    state.result = "";
-    state.toast = "";
-  }
+let pointerStartY = 0;
+let pointerMoved  = false;
+
+canvas.addEventListener('pointerdown', e => {
+  state.isDragging = true;
+  state.lastY      = e.clientY;
+  pointerStartY    = e.clientY;
+  pointerMoved     = false;
 });
 
+canvas.addEventListener('pointermove', e => {
+  if (!state.isDragging) return;
+  if (state.scene !== 'select' && state.scene !== 'collection') return;
+  const dy = e.clientY - state.lastY;
+  if (Math.abs(e.clientY - pointerStartY) > 8) pointerMoved = true;
+  state.scrollY  += dy;
+  state.velocity  = dy;
+  state.lastY     = e.clientY;
+});
+
+canvas.addEventListener('pointerup', e => {
+  state.isDragging = false;
+  if (pointerMoved) { pointerMoved = false; return; }
+
+  const rect = canvas.getBoundingClientRect();
+  const x    = (e.clientX - rect.left) * (LOGICAL_W / rect.width);
+  const y    = (e.clientY - rect.top)  * (LOGICAL_H / rect.height);
+
+  const btn = hit(x, y);
+  if (!btn) return;
+
+  if (btn.id.startsWith('char')) { state.selected = Number(btn.id.replace('char', '')); }
+  if (btn.id === 'start')        { startProfile(); }
+  if (btn.id === 'play')         { startGame(); }
+  if (btn.id === 'a')            { choose(0); }
+  if (btn.id === 'b')            { choose(1); }
+  if (btn.id === 'continue')     { continueGame(); }
+  if (btn.id === 'copy')         { copyShare(); }
+  if (btn.id === 'restart')      { state.runId++; state.scene = 'select'; state.toast = ''; }
+  if (btn.id === 'collection')   { state.scene = 'collection'; }
+  if (btn.id === 'back')         { state.scene = 'select'; }
+});
+
+/* =========================================
+   Resize
+   ========================================= */
 function resize() {
-  particleCanvas.width = window.innerWidth;
+  particleCanvas.width  = window.innerWidth;
   particleCanvas.height = window.innerHeight;
   resizeParticleCanvas(particleSystem, window.innerWidth, window.innerHeight);
 }
+window.addEventListener('resize', resize);
 
-window.addEventListener("resize", resize);
-
+/* =========================================
+   主循环
+   ========================================= */
 function loop(t) {
+  // 清除上次的全局影响，保护原版排版
+  ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
+
   drawBackground(t);
-  if (state.scene === "select") drawSelect();
-  if (state.scene === "profile") drawProfile();
-  if (state.scene === "game") drawGame();
-  if (state.scene === "ending") drawEnding();
+
+  if (state.scene === 'select')     drawSelect(t);
+  if (state.scene === 'profile')    drawProfile();
+  if (state.scene === 'game')       drawGame(t);
+  if (state.scene === 'ending')     drawEnding();
+  if (state.scene === 'collection') drawCollection();
   drawToast();
+
   updateParticles(particleSystem);
   drawParticles(pCtx, particleSystem);
   requestAnimationFrame(loop);
 }
 
+/* =========================================
+   INIT
+   ========================================= */
+
+/* =========================================   背景音乐   ========================================= */const bgm = document.getElementById('bgm');bgm.volume = 0.4; // 音量 0.0 ~ 1.0，自己调
+// 浏览器策略：必须由用户交互触发播放// 监听第一次点击画布时启动音乐
+function startBGM() {  bgm.play().catch(err => console.log('BGM autoplay blocked:', err));  canvas.removeEventListener('pointerdown', startBGM);}canvas.addEventListener('pointerdown', startBGM);
+loadCollection();
 initParticleSystem(window.innerWidth, window.innerHeight);
 resize();
 requestAnimationFrame(loop);

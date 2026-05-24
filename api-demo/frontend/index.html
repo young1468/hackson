@@ -2,31 +2,55 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
   />
+
   <title>一分钟人生岔路口 · API Demo</title>
+
+  <!-- 字体 -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+
   <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
+  <audio id="bgm" src="audio/bgm.mp3" loop preload="auto"></audio>
+  <!-- 背景辉光 -->
   <div class="bg-glow glow1"></div>
   <div class="bg-glow glow2"></div>
 
+  <!-- 星空 -->
   <canvas id="particle-canvas"></canvas>
 
+  <!-- 游戏层 -->
   <div class="game-container">
+
     <div class="glass-frame"></div>
-    <canvas id="gameCanvas" width="540" height="960"></canvas>
+
+    <canvas
+    id="gameCanvas"
+    width="540"
+    height="960"
+  ></canvas>
+
   </div>
 
+  <!-- HUD层 -->
   <div class="scan-line"></div>
   <div class="noise-overlay"></div>
 
+  <!-- JS -->
   <script>
     window.API_BASE = window.API_BASE || "http://localhost:3001";
   </script>
   <script type="module" src="js/particles.js"></script>
   <script type="module" src="js/game.js"></script>
+
 </body>
 </html>
