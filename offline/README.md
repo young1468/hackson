@@ -1,29 +1,40 @@
-# 离线上传版
+# 离线展示版
 
-这是《一分钟人生岔路口》的上传稳定版。
+这是《一分钟人生岔路口》的离线展示版，入口是 `index.html`。
+
+## 当前文件
+
+```text
+offline/
+  index.html
+  css/style.css
+  js/game.js
+  js/particles.js
+  audio/bgm.mp3
+```
 
 ## 特点
 
-- 入口文件：`index.html`
-- 单文件实现，CSS 和 JS 全部内联
-- 已迁移 `minute-life-sim` 的 Canvas 视觉表现
-- 无网络请求
-- 无外部资源引用
-- 不依赖后端或大模型服务
-- 内置 5 个身份、至少 40 个事件、至少 15 个结局
-- 适合抖音互动空间上传
+- Cyber Canvas 竖屏界面
+- 本地剧情池和结局池
+- 5 个身份、6 步选择、4 项属性
+- 本地背景音乐和粒子效果
+- 不依赖后端或 API Key
 
-## 运行方式
-
-直接用浏览器打开：
+## 运行
 
 ```bash
-life-crossroads/offline/index.html
+cd life-crossroads/offline
+python -m http.server 5173
 ```
 
-刷新页面即可重新开始。
+访问：
 
-## 打包方式
+```text
+http://localhost:5173
+```
+
+## 打包
 
 请进入 `offline` 目录后打包内部文件，确保 zip 根目录直接包含 `index.html`：
 
@@ -38,16 +49,9 @@ zip -r ../life-crossroads-offline.zip .
 offline/index.html
 ```
 
-平台通常要求 zip 根目录直接包含：
-
-```text
-index.html
-```
-
 ## 上传前检查
 
-- `index.html` 可以离线打开并完整玩完 6 步。
-- 运行时不会发起网络请求。
-- 不调用 `fetch`、`XMLHttpRequest`、`WebSocket` 或第三方请求库。
-- 不引用外部 `script`、`link`、`img`、`audio` 等资源。
-- zip 体积小于 8MB。
+- `index.html` 可以完整跑通游戏。
+- zip 根目录直接包含 `index.html`。
+- 打包时包含 `css/`、`js/`、`audio/`。
+- 如果平台严格禁止任何外链，请检查 `index.html` 中的字体引用，必要时移除；系统字体可以正常兜底。

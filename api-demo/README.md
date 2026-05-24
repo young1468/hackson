@@ -68,13 +68,13 @@ ANTHROPIC_MODEL=mimo-v2.5
 
 ```bash
 cd life-crossroads/api-demo/frontend
-python -m http.server 5173
+python -m http.server 5175
 ```
 
 访问：
 
 ```text
-http://localhost:5173
+http://localhost:5175
 ```
 
 前端默认请求：
@@ -100,6 +100,20 @@ window.API_BASE = "http://localhost:3001";
 
 ```js
 const API_BASE = window.API_BASE || "http://localhost:3001";
+```
+
+## 演示视频
+
+如果要把演示视频放进 GitHub，推荐把视频压缩后放到根目录：
+
+```text
+docs/demo.mp4
+```
+
+然后在根目录 `README.md` 的“演示视频”区域打开 `<video>` 标签或使用链接：
+
+```markdown
+[点击查看演示视频](docs/demo.mp4)
 ```
 
 ## 接口
